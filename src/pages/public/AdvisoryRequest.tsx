@@ -5,6 +5,7 @@
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { addAdvisoryRequest, listProgrammers } from '../../services/firestore'
 import type { DocumentData } from 'firebase/firestore'
+import fotoAlexis from '../../img/fotoalexis.jpg'
 
 const initialForm = {
   programmerId: '',
@@ -15,15 +16,40 @@ const initialForm = {
   note: '',
 }
 
+// Programadores estáticos del equipo
+const staticProgrammers = [
+  {
+    id: 'alexis-static',
+    displayName: 'Alexis',
+    specialty: 'Full Stack Developer',
+    bio: 'Desarrollador full-stack especializado en React, Node.js y Firebase.',
+    email: 'aguamanp4@est.ups.edu.ec',
+    photoURL: fotoAlexis,
+    isStatic: true
+  },
+  {
+    id: 'daniel-static',
+    displayName: 'Daniel',
+    specialty: 'Frontend Developer',
+    bio: 'Experto en desarrollo frontend con React y TypeScript.',
+    email: 'aguamanp4@est.ups.edu.ec',
+    photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniel',
+    isStatic: true
+  }
+]
+
 const AdvisoryRequest = () => {
   const [form, setForm] = useState(initialForm)
   const [loading, setLoading] = useState(false)
-  const [programmers, setProgrammers] = useState<(DocumentData & { id: string })[]>([])
+  const [programmers, setProgrammers] = useState<(DocumentData & { id: string })[]>(staticProgrammers)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
-    listProgrammers().then(setProgrammers)
+    listProgrammers().then(firestoreProgrammers => {
+      // Combinar programadores estáticos con los de Firestore
+      setProgrammers([...staticProgrammers, ...firestoreProgrammers])
+    })
   }, [])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
