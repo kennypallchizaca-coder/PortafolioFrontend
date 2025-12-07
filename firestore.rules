@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Colección de usuarios (programadores)
+    match /users/{userId} {
+      // Todos pueden leer perfiles de programadores
+      allow read: if true;
+      // Solo usuarios autenticados pueden escribir (admin)
+      allow write: if request.auth != null;
+    }
+    
+    // Colección de proyectos
+    match /projects/{projectId} {
+      // Todos pueden leer proyectos (incluso sin autenticación)
+      allow read: if true;
+      // Solo usuarios autenticados pueden escribir (admin o programadores)
+      allow write: if request.auth != null;
+    }
+    
+    // Colección de portafolios
+    match /portfolios/{portfolioId} {
+      // Todos pueden leer portafolios
+      allow read: if true;
+      // Solo el dueño puede escribir
+      allow write: if request.auth != null && request.auth.uid == portfolioId;
+    }
+    
+    // Colección de horarios
+    match /schedules/{scheduleId} {
+      // Todos pueden leer horarios
+      allow read: if true;
+      // Solo usuarios autenticados pueden escribir
+      allow write: if request.auth != null;
+    }
+    
+    // Colección de asesorías
+    match /advisories/{advisoryId} {
+      // Todos pueden leer sus propias asesorías
+      allow read: if true;
+      // Cualquiera puede crear una solicitud de asesoría
+      allow create: if true;
+      // Solo usuarios autenticados pueden actualizar
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+  }
+}

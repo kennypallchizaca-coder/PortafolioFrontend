@@ -12,7 +12,6 @@ import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi'
 
 // Datos base para el formulario de alta/edición
 const initialForm = {
-  uid: '',
   displayName: '',
   email: '',
   specialty: '',
@@ -42,7 +41,6 @@ const ProgrammersPage = () => {
 
   // Reglas de validación
   const validationRules = {
-    uid: [(val: string) => FormUtils.required(val)],
     displayName: [
       (val: string) => FormUtils.required(val),
       (val: string) => FormUtils.minLength(val, 3)
@@ -168,14 +166,17 @@ const ProgrammersPage = () => {
     setMessage('')
     
     try {
+      // Generar UID automático si es nuevo, o usar el existente si es edición
+      const uid = editingId || `prog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
       let photoURL = form.photoURL
 
       // Si hay una nueva foto, subirla a Firebase Storage
       if (photoFile) {
-        photoURL = await uploadPhoto(form.uid, photoFile)
+        photoURL = await uploadPhoto(uid, photoFile)
       }
 
-      await upsertProgrammer(form.uid, {
+      await upsertProgrammer(uid, {
         displayName: form.displayName,
         email: form.email,
         specialty: form.specialty,
@@ -209,7 +210,6 @@ const ProgrammersPage = () => {
   const handleEdit = (dev: DocumentData & { id: string }) => {
     setEditingId(dev.id)
     setForm({
-      uid: dev.id,
       displayName: dev.displayName || '',
       email: dev.email || '',
       specialty: dev.specialty || '',
@@ -293,28 +293,6 @@ const ProgrammersPage = () => {
               </div>
             </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">UID de Firebase *</span>
-              </label>
-              <input
-                name="uid"
-                value={form.uid}
-                onChange={handleChange}
-                onBlur={() => handleBlur('uid')}
-                disabled={!!editingId}
-                className={`input input-bordered ${touched.uid && formErrors.uid ? 'input-error' : ''} ${editingId ? 'input-disabled' : ''}`}
-                placeholder="UID del usuario autenticado"
-              />
-              {touched.uid && formErrors.uid && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{formErrors.uid}</span>
-                </label>
-              )}
-              <span className="label-text-alt text-base-content/60">
-                {editingId ? 'El UID no se puede modificar' : 'Se crea el documento en users con este UID y rol programmer.'}
-              </span>
-            </div>
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Nombre *</span>
