@@ -3,12 +3,12 @@
  * Prácticas: Formularios controlados con validación completa y arrays dinámicos, consumo Firestore, feedback DaisyUI.
  */
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
-import { listProgrammers, upsertProgrammer } from '../../services/firestore'
+import { listProgrammers, upsertProgrammer, deleteProgrammer } from '../../services/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../../services/firebase'
 import type { DocumentData } from 'firebase/firestore'
 import { FormUtils } from '../../utils/FormUtils'
-import { FiPlus, FiTrash2 } from 'react-icons/fi'
+import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi'
 
 // Datos base para el formulario de alta/edición
 const initialForm = {
@@ -34,6 +34,7 @@ const ProgrammersPage = () => {
   const [photoPreview, setPhotoPreview] = useState('')
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   // Arrays dinámicos para habilidades
   const [skills, setSkills] = useState<string[]>(['JavaScript', 'React'])
@@ -188,7 +189,7 @@ const ProgrammersPage = () => {
           whatsapp: form.whatsapp || undefined,
         },
       })
-      setMessage('✓ Programador guardado correctamente.')
+      setMessage(editingId ? '✓ Programador actualizado correctamente.' : '✓ Programador guardado correctamente.')
       setForm(initialForm)
       setSkills(['JavaScript', 'React'])
       setNewSkill('')
@@ -196,12 +197,57 @@ const ProgrammersPage = () => {
       setPhotoPreview('')
       setFormErrors({})
       setTouched({})
+      setEditingId(null)
       await loadProgrammers()
     } catch (err) {
       setError('No se pudo guardar. Verifica permisos y conexión.')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEdit = (dev: DocumentData & { id: string }) => {
+    setEditingId(dev.id)
+    setForm({
+      uid: dev.id,
+      displayName: dev.displayName || '',
+      email: dev.email || '',
+      specialty: dev.specialty || '',
+      bio: dev.bio || '',
+      role: 'programmer',
+      photoURL: dev.photoURL || '',
+      github: dev.socials?.github || '',
+      instagram: dev.socials?.instagram || '',
+      whatsapp: dev.socials?.whatsapp || '',
+    })
+    setSkills(dev.skills || ['JavaScript', 'React'])
+    setPhotoPreview(dev.photoURL || '')
+    setFormErrors({})
+    setTouched({})
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleDelete = async (uid: string, displayName: string) => {
+    if (!confirm(`¿Estás seguro de eliminar a ${displayName}?`)) return
+    
+    try {
+      await deleteProgrammer(uid)
+      setMessage(`✓ ${displayName} eliminado correctamente.`)
+      await loadProgrammers()
+    } catch (err) {
+      setError('No se pudo eliminar el programador.')
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+    setForm(initialForm)
+    setSkills(['JavaScript', 'React'])
+    setNewSkill('')
+    setPhotoFile(null)
+    setPhotoPreview('')
+    setFormErrors({})
+    setTouched({})
   }
 
   return (
@@ -218,7 +264,7 @@ const ProgrammersPage = () => {
       <div className="grid gap-4 md:grid-cols-2">
         <form onSubmit={handleSubmit} className="card bg-base-100 shadow-md">
           <div className="card-body space-y-3">
-            <h2 className="card-title">Nuevo / editar</h2>
+            <h2 className="card-title">{editingId ? 'Editar programador' : 'Nuevo programador'}</h2>
             {message && <div className="alert alert-success text-sm">{message}</div>}
             {error && <div className="alert alert-error text-sm">{error}</div>}
             
@@ -256,7 +302,8 @@ const ProgrammersPage = () => {
                 value={form.uid}
                 onChange={handleChange}
                 onBlur={() => handleBlur('uid')}
-                className={`input input-bordered ${touched.uid && formErrors.uid ? 'input-error' : ''}`}
+                disabled={!!editingId}
+                className={`input input-bordered ${touched.uid && formErrors.uid ? 'input-error' : ''} ${editingId ? 'input-disabled' : ''}`}
                 placeholder="UID del usuario autenticado"
               />
               {touched.uid && formErrors.uid && (
@@ -265,7 +312,7 @@ const ProgrammersPage = () => {
                 </label>
               )}
               <span className="label-text-alt text-base-content/60">
-                Se crea el documento en users con este UID y rol programmer.
+                {editingId ? 'El UID no se puede modificar' : 'Se crea el documento en users con este UID y rol programmer.'}
               </span>
             </div>
             <div className="form-control">
@@ -461,9 +508,18 @@ const ProgrammersPage = () => {
               )}
             </div>
 
-            <div className="card-actions justify-end">
+            <div className="card-actions justify-end gap-2">
+              {editingId && (
+                <button 
+                  className="btn btn-ghost" 
+                  type="button" 
+                  onClick={handleCancelEdit}
+                >
+                  Cancelar
+                </button>
+              )}
               <button className="btn btn-primary" type="submit" disabled={loading}>
-                {loading ? 'Guardando...' : 'Guardar programador'}
+                {loading ? 'Guardando...' : editingId ? 'Actualizar' : 'Guardar programador'}
               </button>
             </div>
           </div>
@@ -548,6 +604,24 @@ const ProgrammersPage = () => {
                           )}
                         </div>
                       )}
+
+                      {/* Botones de acción */}
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => handleEdit(dev)}
+                          className="btn btn-sm btn-primary gap-2"
+                        >
+                          <FiEdit2 className="h-4 w-4" />
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDelete(dev.id, dev.displayName)}
+                          className="btn btn-sm btn-error gap-2"
+                        >
+                          <FiTrash2 className="h-4 w-4" />
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

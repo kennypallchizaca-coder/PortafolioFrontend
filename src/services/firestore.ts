@@ -13,6 +13,7 @@ import {
   serverTimestamp,
   updateDoc,
   setDoc,
+  deleteDoc,
   DocumentData,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -89,6 +90,10 @@ export const listProgrammers = async () => {
   )
   const snap = await getDocs(q)
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }))
+}
+
+export const deleteProgrammer = async (uid: string) => {
+  await deleteDoc(doc(db, collections.users, uid))
 }
 
 // Portafolios
