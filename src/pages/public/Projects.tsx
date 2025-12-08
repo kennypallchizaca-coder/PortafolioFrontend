@@ -266,9 +266,9 @@ const Projects = () => {
 
                   {/* Botones */}
                   <div className="flex gap-2 pt-2">
-                    {(project.projectUrl || project.demoUrl) ? (
+                    {(project.projectUrl || project.demoUrl || project.githubUrl || project.repoUrl) ? (
                       <a
-                        href={project.projectUrl || project.demoUrl}
+                        href={project.projectUrl || project.demoUrl || project.githubUrl || project.repoUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-primary btn-sm flex-1 gap-2 rounded-xl shadow-lg hover:shadow-xl transition-all"
@@ -285,7 +285,7 @@ const Projects = () => {
                         Ver Proyecto
                       </button>
                     )}
-                    {(project.githubUrl || project.repoUrl) ? (
+                    {(project.githubUrl || project.repoUrl) && (
                       <a
                         href={project.githubUrl || project.repoUrl}
                         target="_blank"
@@ -295,14 +295,6 @@ const Projects = () => {
                       >
                         <FiGithub className="h-5 w-5" />
                       </a>
-                    ) : (
-                      <button
-                        disabled
-                        className="btn btn-ghost btn-sm btn-circle btn-disabled"
-                        title="GitHub"
-                      >
-                        <FiGithub className="h-5 w-5" />
-                      </button>
                     )}
                   </div>
                 </div>

@@ -39,14 +39,14 @@ export const loginWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider)
     const user = result.user
     
-    console.log('✅ Login exitoso:', user.email)
+    console.log(' Login exitoso:', user.email)
     
     // Crear o actualizar usuario en Firestore
     const userRef = doc(db, USERS_COLLECTION, user.uid)
     const userDoc = await getDoc(userRef)
     
     if (!userDoc.exists()) {
-      console.log('📝 Creando usuario en Firestore...')
+      console.log('Creando usuario en Firestore...')
       await setDoc(userRef, {
         displayName: user.displayName,
         email: user.email,
@@ -54,14 +54,14 @@ export const loginWithGoogle = async () => {
         role: 'external' as Role,
         createdAt: serverTimestamp(),
       })
-      console.log('✅ Usuario creado en Firestore')
+      console.log('Usuario creado en Firestore')
     } else {
-      console.log('✅ Usuario ya existe en Firestore')
+      console.log('Usuario ya existe en Firestore')
     }
     
     return user
   } catch (error: any) {
-    console.error('❌ Error en login:', error.code, error.message)
+    console.error('Error en login:', error.code, error.message)
     throw error
   }
 }
