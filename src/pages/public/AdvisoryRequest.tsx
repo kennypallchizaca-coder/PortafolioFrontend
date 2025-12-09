@@ -82,7 +82,9 @@ const AdvisoryRequest = () => {
       setMessage('Solicitud enviada. Recibirás respuesta del programador.')
       setForm(initialForm)
     } catch (err) {
-      setError('No se pudo enviar la solicitud. Intenta nuevamente.')
+      console.error('Error al enviar solicitud:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      setError(`No se pudo enviar la solicitud: ${errorMessage}`)
     } finally {
       setLoading(false)
     }

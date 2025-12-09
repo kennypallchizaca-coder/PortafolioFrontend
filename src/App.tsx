@@ -23,6 +23,7 @@ const ProgrammerDirectory = lazy(
   () => import('./pages/public/ProgrammerDirectory'),
 )
 const AdvisoryRequest = lazy(() => import('./pages/public/AdvisoryRequest'))
+const MyAdvisoryRequests = lazy(() => import('./pages/public/MyAdvisoryRequests'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const ProjectsAdmin = lazy(() => import('./pages/admin/ProjectsAdmin'))
 const ProgrammerDashboard = lazy(
@@ -55,7 +56,8 @@ function App() {
           <Route path="/proyectos" element={<Projects />} />
           <Route path="/portafolio/:id" element={<PortfolioPublic />} />
           <Route path="/programadores" element={<ProgrammerDirectory />} />
-          <Route path="/asesoria" element={<AdvisoryRequest />} />
+          <Route path="/agendar-asesoria" element={<AdvisoryRequest />} />
+          <Route path="/mis-solicitudes" element={<MyAdvisoryRequests />} />
           <Route path="/login" element={<LoginPage />} />
         </Route>
 

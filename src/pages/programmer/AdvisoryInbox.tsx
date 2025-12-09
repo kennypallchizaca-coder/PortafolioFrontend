@@ -12,6 +12,7 @@ const AdvisoryInbox = () => {
   const [items, setItems] = useState<(DocumentData & { id: string })[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [filter, setFilter] = useState<'todas' | 'pendiente' | 'aprobada' | 'rechazada'>('pendiente')
 
   const load = async () => {
     if (!user?.uid) return
@@ -40,6 +41,10 @@ const AdvisoryInbox = () => {
     }
   }
 
+  const filteredItems = filter === 'todas' 
+    ? items 
+    : items.filter(item => item.status === filter)
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -53,10 +58,38 @@ const AdvisoryInbox = () => {
           Recargar
         </button>
       </div>
+      
+      <div className="flex gap-2">
+        <button 
+          className={`btn btn-sm ${filter === 'pendiente' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setFilter('pendiente')}
+        >
+          Pendientes
+        </button>
+        <button 
+          className={`btn btn-sm ${filter === 'aprobada' ? 'btn-success' : 'btn-outline'}`}
+          onClick={() => setFilter('aprobada')}
+        >
+          Aprobadas
+        </button>
+        <button 
+          className={`btn btn-sm ${filter === 'rechazada' ? 'btn-error' : 'btn-outline'}`}
+          onClick={() => setFilter('rechazada')}
+        >
+          Rechazadas
+        </button>
+        <button 
+          className={`btn btn-sm ${filter === 'todas' ? 'btn-accent' : 'btn-outline'}`}
+          onClick={() => setFilter('todas')}
+        >
+          Todas
+        </button>
+      </div>
+      
       {error && <div className="alert alert-error text-sm">{error}</div>}
       {loading && <div className="skeleton h-20 w-full" />}
       <div className="space-y-2">
-        {items.map((item) => (
+        {filteredItems.map((item) => (
           <div key={item.id} className="card bg-base-100 shadow-sm">
             <div className="card-body">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -70,26 +103,28 @@ const AdvisoryInbox = () => {
                 Fecha: {item.slot?.date} · Hora: {item.slot?.time}
               </p>
               <p className="text-sm text-base-content/70">{item.note}</p>
-              <div className="card-actions justify-end">
-                <button
-                  className="btn btn-success btn-sm"
-                  onClick={() => updateStatus(item.id, 'aprobada')}
-                >
-                  Aprobar
-                </button>
-                <button
-                  className="btn btn-error btn-sm"
-                  onClick={() => updateStatus(item.id, 'rechazada')}
-                >
-                  Rechazar
-                </button>
-              </div>
+              {item.status === 'pendiente' && (
+                <div className="card-actions justify-end">
+                  <button
+                    className="btn btn-success btn-sm"
+                    onClick={() => updateStatus(item.id, 'aprobada')}
+                  >
+                    Aprobar
+                  </button>
+                  <button
+                    className="btn btn-error btn-sm"
+                    onClick={() => updateStatus(item.id, 'rechazada')}
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}
-        {!items.length && !loading && (
+        {!filteredItems.length && !loading && (
           <div className="alert alert-info text-sm">
-            No hay solicitudes pendientes.
+            No hay solicitudes {filter === 'todas' ? '' : filter === 'pendiente' ? 'pendientes' : `${filter}s`}.
           </div>
         )}
       </div>

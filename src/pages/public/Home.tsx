@@ -331,10 +331,16 @@ const Home = () => {
             {/* CTA Buttons */}
             <div className="flex flex-wrap justify-center gap-4 pt-8">
               <Link
-                to="/asesoria"
+                to="/agendar-asesoria"
                 className="btn btn-lg px-8 bg-gradient-to-r from-primary to-secondary text-white border-0 shadow-xl hover:scale-105 transition-all duration-200"
               >
                 Solicitar Asesoría
+              </Link>
+              <Link
+                to="/mis-solicitudes"
+                className="btn btn-lg btn-outline px-8 shadow-lg hover:scale-105 transition-all duration-200"
+              >
+                Ver Mis Solicitudes
               </Link>
             </div>
 

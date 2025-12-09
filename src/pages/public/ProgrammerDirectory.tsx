@@ -12,6 +12,7 @@ import { FiUsers, FiEye, FiMail, FiCode, FiGithub, FiInstagram } from 'react-ico
 import { FaWhatsapp } from 'react-icons/fa'
 import LocalImage from '../../components/LocalImage'
 import fotoAlexis from '../../img/fotoalexis.jpg'
+import fotoDaniel from '../../img/fotoDaniel.jpg'
 
 // Programadores estáticos del equipo
 const staticTeam = [
@@ -35,14 +36,14 @@ const staticTeam = [
     displayName: 'Daniel',
     specialty: 'Frontend Developer',
     bio: 'Experto en desarrollo frontend con React y TypeScript. Enfocado en crear interfaces de usuario modernas y accesibles.',
-    email: 'aguamanp4@est.ups.edu.ec',
-    photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Daniel',
+    email: 'dguangag@est.ups.edu.ec',
+    photoURL: fotoDaniel,
     isStatic: true,
     skills: ['React', 'TypeScript', 'TailwindCSS', 'HTML5', 'CSS3', 'Responsive Design'],
     socials: {
-      github: 'https://github.com/daniel',
-      instagram: 'https://instagram.com/daniel',
-      whatsapp: 'https://wa.me/593988888888'
+      github: 'https://github.com/Pangust-code',
+      instagram: 'https://www.instagram.com/pangust01?igsh=bXZ2dHo3cW54NjFr',
+      whatsapp: 'https://wa.me/5930958867933'
     }
   }
 ]
