@@ -262,7 +262,7 @@ Proyecto académico desarrollado para la Universidad Nacional de Loja - Carrera 
 ## Contacto
 
 Para preguntas o soporte:
-- **Email**: alex.guaaman@est.ups.edu.ec
+- **Email**: aguamanp4@est.ups.edu.ec
 - **GitHub**: [kennypallchizaca-coder](https://github.com/kennypallchizaca-coder)
 
 ---
