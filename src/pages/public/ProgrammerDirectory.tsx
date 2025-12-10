@@ -49,7 +49,7 @@ const staticTeam = [
 ]
 
 const ProgrammerDirectory = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, role } = useAuth()
   const [programmers, setProgrammers] = useState<(DocumentData & { id: string })[]>(staticTeam)
   const [loading, setLoading] = useState(false)
 
@@ -233,7 +233,7 @@ const ProgrammerDirectory = () => {
 
               {/* Acciones */}
               <div className="pt-2">
-                {isAuthenticated && !dev.isStatic ? (
+                {isAuthenticated && role !== 'external' && !dev.isStatic ? (
                   <Link
                     className="btn btn-primary btn-block gap-2 shadow-lg hover:shadow-xl transition-all hover:scale-105 rounded-xl"
                     to={`/portafolio/${dev.id}`}
