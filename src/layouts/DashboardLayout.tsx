@@ -34,9 +34,6 @@ const DashboardLayout = ({ role }: { role: 'admin' | 'programmer' }) => (
                   >
                     Proyectos
                   </Link>
-                  <Link className="btn btn-secondary btn-sm" to="/admin/horarios">
-                    Horarios
-                  </Link>
                 </>
               )}
               {role === 'programmer' && (

@@ -45,6 +45,8 @@ export interface ProgrammerProfile {
   role: Role
   photoURL?: string
   skills?: string[]
+  available?: boolean
+  schedule?: string[]
   socials?: {
     github?: string
     instagram?: string
@@ -61,6 +63,7 @@ export interface Portfolio {
 }
 
 export interface Project {
+  ownerId: string
   title: string
   description?: string
   category: 'academico' | 'laboral'
@@ -80,11 +83,18 @@ export interface AdvisoryRequestInput {
   note?: string
 }
 
-export interface ScheduleSlot {
-  day: string
-  from: string
-  to: string
-  available: boolean
+export interface Advisory {
+  id: string
+  programmerId: string
+  programmerEmail?: string
+  programmerName?: string
+  requesterName: string
+  requesterEmail: string
+  slot: { date: string; time: string }
+  note?: string
+  status: 'pending' | 'approved' | 'rejected'
+  response?: string
+  createdAt: Date
 }
 
 const resolveProgrammerContact = async (
@@ -143,7 +153,11 @@ export const listProgrammers = async () => {
     where('role', '==', 'programmer'),
   )
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as DocumentData) }))
+  return snap.docs.map((d) => ({ 
+    id: d.id, 
+    available: d.data().available ?? false,
+    ...(d.data() as DocumentData) 
+  }))
 }
 
 export const deleteProgrammer = async (uid: string) => {
@@ -202,7 +216,8 @@ export const addAdvisoryRequest = async (data: AdvisoryRequestInput) => {
     ...data,
     programmerEmail: contact.programmerEmail,
     programmerName: contact.programmerName,
-    status: 'pendiente',
+    status: 'pending',
+    response: '',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
@@ -267,17 +282,4 @@ export const updateAdvisoryStatus = async (
   })
 }
 
-// Horarios
-export const upsertSchedule = async (programmerId: string, slots: ScheduleSlot[]) => {
-  await setDoc(doc(db, collections.schedules, programmerId), {
-    programmerId,
-    slots,
-    updatedAt: serverTimestamp(),
-  })
-}
-
-export const getScheduleByProgrammer = async (programmerId: string) => {
-  const ref = doc(db, collections.schedules, programmerId)
-  const snap = await getDoc(ref)
-  return snap.exists() ? (snap.data() as DocumentData) : null
-}
+// Fin del archivo

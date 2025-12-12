@@ -1,6 +1,6 @@
 /**
  * Dashboard del Administrador (resumen).
- * Prácticas: UX con tarjetas, acceso rápido a CRUD de programadores/horarios.
+ * Prácticas: UX con tarjetas, acceso rápido a CRUD de programadores.
  */
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
@@ -66,21 +66,6 @@ const AdminDashboard = () => {
             <div className="card-actions justify-end">
               <Link className="btn btn-primary" to="/admin/programadores">
                 Abrir gestión
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="card bg-base-100 shadow-md">
-          <div className="card-body">
-            <h2 className="card-title">Horarios de asesoría</h2>
-            <p className="text-sm text-base-content/70">
-              Registra la disponibilidad de cada programador para que usuarios
-              agenden.
-            </p>
-            <div className="card-actions justify-end">
-              <Link className="btn btn-secondary" to="/admin/horarios">
-                Configurar horarios
               </Link>
             </div>
           </div>

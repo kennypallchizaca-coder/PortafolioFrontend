@@ -19,6 +19,7 @@ const emptyProject = {
   repoUrl: '',
   demoUrl: '',
   imageUrl: '',
+  programmerName: '',
 }
 
 const ProjectsPage = () => {
@@ -102,6 +103,7 @@ const ProjectsPage = () => {
         repoUrl: form.repoUrl,
         demoUrl: form.demoUrl,
         imageUrl: '',
+        programmerName: form.programmerName,
       }
 
       let projectId = editingId
@@ -157,6 +159,7 @@ const ProjectsPage = () => {
       repoUrl: p.repoUrl || '',
       demoUrl: p.demoUrl || '',
       imageUrl: p.imageUrl || '',
+      programmerName: p.programmerName || '',
     })
     setImagePreview(p.imageUrl || '')
   }
@@ -208,6 +211,18 @@ const ProjectsPage = () => {
                 onChange={handleChange}
                 className="textarea textarea-bordered"
                 rows={3}
+              />
+            </div>
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">Nombre del programador</span>
+              </label>
+              <input
+                name="programmerName"
+                value={form.programmerName}
+                onChange={handleChange}
+                className="input input-bordered"
+                placeholder="Tu nombre"
               />
             </div>
             <div className="grid gap-3 md:grid-cols-2">

@@ -8,7 +8,7 @@ import { listProgrammers } from '../../services/firestore'
 import { useAuth } from '../../context/AuthContext'
 import type { DocumentData } from 'firebase/firestore'
 import { motion } from 'framer-motion'
-import { FiUsers, FiEye, FiMail, FiCode, FiGithub, FiInstagram } from 'react-icons/fi'
+import { FiUsers, FiEye, FiMail, FiCode, FiGithub, FiInstagram, FiRefreshCw } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
 import LocalImage from '../../components/LocalImage'
 import fotoAlexis from '../../img/fotoalexis.jpg'
@@ -24,6 +24,8 @@ const staticTeam = [
     email: 'aguamanp4@est.ups.edu.ec',
     photoURL: fotoAlexis,
     isStatic: true,
+    available: true,
+    schedule: ['09:00', '11:00', '14:00'],
     skills: ['JavaScript', 'React', 'Node.js', 'TypeScript', 'Firebase', 'MongoDB', 'Express'],
     socials: {
       github: 'https://github.com/kennypallchizaca-coder',
@@ -39,6 +41,8 @@ const staticTeam = [
     email: 'dguangag@est.ups.edu.ec',
     photoURL: fotoDaniel,
     isStatic: true,
+    available: true,
+    schedule: ['08:00', '10:00', '15:00'],
     skills: ['React', 'TypeScript', 'TailwindCSS', 'HTML5', 'CSS3', 'Responsive Design'],
     socials: {
       github: 'https://github.com/Pangust-code',
@@ -52,6 +56,7 @@ const ProgrammerDirectory = () => {
   const { isAuthenticated, role, user } = useAuth()
   const [programmers, setProgrammers] = useState<(DocumentData & { id: string })[]>(staticTeam)
   const [loading, setLoading] = useState(false)
+  const [reload, setReload] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -72,7 +77,7 @@ const ProgrammerDirectory = () => {
       }
     }
     load()
-  }, [])
+  }, [reload])
 
   if (loading) {
     return (
@@ -106,6 +111,13 @@ const ProgrammerDirectory = () => {
             <FiUsers className="h-4 w-4" />
             {programmers.length} Desarrolladores
           </div>
+          <button
+            onClick={() => setReload(!reload)}
+            className="btn btn-outline btn-sm gap-2"
+          >
+            <FiRefreshCw className="h-4 w-4" />
+            Recargar
+          </button>
         </div>
       </motion.div>
 
@@ -153,6 +165,25 @@ const ProgrammerDirectory = () => {
                   <FiCode className="h-3 w-3" />
                   <span className="capitalize">{dev.specialty || 'Desarrollador'}</span>
                 </div>
+
+                {/* Badge disponibilidad */}
+                <div className={`badge badge-lg gap-2 shadow-md ${dev.available ? 'badge-success' : 'badge-error'}`}>
+                  {dev.available ? 'Disponible' : 'No Disponible'}
+                </div>
+
+                {/* Horario */}
+                {dev.schedule && dev.schedule.length > 0 && (
+                  <div className="text-xs text-base-content/70 mt-2">
+                    <strong>Horarios disponibles:</strong>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {dev.schedule.map((time: string, i: number) => (
+                        <span key={i} className="badge badge-sm badge-outline">
+                          {time}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Nombre */}
@@ -233,9 +264,7 @@ const ProgrammerDirectory = () => {
 
               {/* Acciones */}
               <div className="pt-2">
-                {isAuthenticated &&
-                  ((role !== 'external' && role !== 'programmer' && !dev.isStatic) ||
-                  (role === 'programmer' && user && user.uid === dev.id && !dev.isStatic)) ? (
+                {isAuthenticated && role === 'programmer' && user && user.uid === dev.id && !dev.isStatic ? (
                   <Link
                     className="btn btn-primary btn-block gap-2 shadow-lg hover:shadow-xl transition-all hover:scale-105 rounded-xl"
                     to={`/portafolio/${dev.id}`}

@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { listAdvisoriesByProgrammer, updateAdvisoryStatus } from '../../services/firestore'
+import { sendRequesterStatusEmail } from '../../services/email'
 import type { DocumentData } from 'firebase/firestore'
 
 const AdvisoryInbox = () => {
@@ -37,9 +38,24 @@ const AdvisoryInbox = () => {
     load()
   }, [user?.uid])
 
-  const updateStatus = async (id: string, status: 'pendiente' | 'aprobada' | 'rechazada') => {
+  const updateStatus = async (id: string, status: 'pendiente' | 'aprobada' | 'rechazada', response?: string) => {
     try {
-      await updateAdvisoryStatus(id, status, status === 'aprobada' ? 'Confirmada' : 'Rechazada')
+      const item = items.find(i => i.id === id)
+      await updateAdvisoryStatus(id, status, response || (status === 'aprobada' ? 'Confirmada' : 'Rechazada'))
+
+      // Enviar notificación por email al solicitante
+      if (item) {
+        await sendRequesterStatusEmail({
+          requesterEmail: item.requesterEmail,
+          requesterName: item.requesterName,
+          programmerName: user?.displayName || 'Programador',
+          status,
+          date: item.slot?.date,
+          time: item.slot?.time,
+          responseMessage: response || (status === 'aprobada' ? 'Confirmada' : 'Rechazada'),
+        })
+      }
+
       await load()
     } catch (err) {
       setError('No se pudo actualizar el estado.')
@@ -118,7 +134,7 @@ const AdvisoryInbox = () => {
                 Fecha: {item.slot?.date} · Hora: {item.slot?.time}
               </p>
               <p className="text-sm text-base-content/70">{item.note}</p>
-              {item.status === 'pendiente' && (
+              {item.status === 'pending' && (
                 <div className="card-actions justify-end">
                   <button
                     className="btn btn-success btn-sm"

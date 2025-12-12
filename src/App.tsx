@@ -30,7 +30,6 @@ const ProgrammerDashboard = lazy(
   () => import('./pages/programmer/ProgrammerDashboard'),
 )
 const ProgrammersPage = lazy(() => import('./pages/admin/ProgrammersPage'))
-const ScheduleManager = lazy(() => import('./pages/admin/ScheduleManager'))
 const PortfolioEditor = lazy(
   () => import('./pages/programmer/PortfolioEditor'),
 )
@@ -75,7 +74,6 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="programadores" element={<ProgrammersPage />} />
           <Route path="proyectos" element={<ProjectsAdmin />} />
-          <Route path="horarios" element={<ScheduleManager />} />
         </Route>
 
         <Route

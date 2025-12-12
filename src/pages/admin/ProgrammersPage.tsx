@@ -21,6 +21,7 @@ const initialForm = {
   github: '',
   instagram: '',
   whatsapp: '',
+  available: false,
 }
 
 const ProgrammersPage = () => {
@@ -38,6 +39,10 @@ const ProgrammersPage = () => {
   // Arrays dinámicos para habilidades
   const [skills, setSkills] = useState<string[]>(['JavaScript', 'React'])
   const [newSkill, setNewSkill] = useState('')
+
+  // Arrays dinámicos para horarios
+  const [times, setTimes] = useState<string[]>(['09:00', '11:00'])
+  const [newTime, setNewTime] = useState('')
 
   // Reglas de validación
   const validationRules = {
@@ -173,6 +178,11 @@ const ProgrammersPage = () => {
       errors['skills'] = 'Debe tener al menos 2 habilidades'
     }
     
+    // Validar horario si está disponible
+    if (form.available && times.length === 0) {
+      errors['schedule'] = 'Debe especificar al menos un horario si está disponible'
+    }
+    
     // Si hay errores, no enviar
     if (FormUtils.hasErrors(errors)) {
       setError('Por favor corrige los errores en el formulario.')
@@ -217,11 +227,15 @@ const ProgrammersPage = () => {
         photoURL: '', // No guardamos URL en Firestore
         skills: skills,
         socials,
+        available: form.available,
+        schedule: times,
       })
       setMessage(editingId ? '✓ Programador actualizado correctamente.' : '✓ Programador guardado correctamente.')
       setForm(initialForm)
       setSkills(['JavaScript', 'React'])
       setNewSkill('')
+      setTimes(['09:00', '11:00'])
+      setNewTime('')
       setPhotoFile(null)
       setPhotoPreview('')
       setFormErrors({})
@@ -248,7 +262,9 @@ const ProgrammersPage = () => {
       github: dev.socials?.github || '',
       instagram: dev.socials?.instagram || '',
       whatsapp: dev.socials?.whatsapp || '',
+      available: dev.available ?? false,
     })
+    setTimes(dev.schedule || ['09:00', '11:00'])
     setSkills(dev.skills || ['JavaScript', 'React'])
     setPhotoPreview(dev.photoURL || '')
     setFormErrors({})
@@ -392,6 +408,90 @@ const ProgrammersPage = () => {
                 </label>
               )}
             </div>
+
+            {/* Disponibilidad */}
+            <div className="form-control">
+              <label className="label cursor-pointer">
+                <span className="label-text">Disponible para asesorías</span>
+                <input
+                  type="checkbox"
+                  checked={form.available}
+                  onChange={(e) => {
+                    const isAvailable = e.target.checked
+                    setForm((prev) => ({ ...prev, available: isAvailable }))
+                    setTimes(isAvailable ? times : [])
+                  }}
+                  className="toggle toggle-primary"
+                />
+              </label>
+            </div>
+
+            {/* Horario */}
+            {form.available && (
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-bold">Horarios de disponibilidad *</span>
+                </label>
+                
+                {/* Input para agregar nuevo horario */}
+                <div className="join mb-3">
+                  <input
+                    type="time"
+                    value={newTime}
+                    onChange={(e) => setNewTime(e.target.value)}
+                    className="input input-bordered join-item"
+                    placeholder="Selecciona hora"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newTime && !times.includes(newTime)) {
+                        setTimes([...times, newTime])
+                        setNewTime('')
+                      }
+                    }}
+                    className="btn btn-primary join-item"
+                  >
+                    <FiPlus /> Agregar
+                  </button>
+                </div>
+
+                {/* Lista dinámica de horarios */}
+                <div className="space-y-2">
+                  {times.map((time, index) => (
+                    <div key={index} className="join w-full">
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={(e) => {
+                          const newTimes = [...times]
+                          newTimes[index] = e.target.value
+                          setTimes(newTimes)
+                        }}
+                        className="input input-bordered join-item flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setTimes(times.filter((_, i) => i !== index))}
+                        className="btn btn-error join-item"
+                      >
+                        <FiTrash2 /> Eliminar
+                      </button>
+                    </div>
+                  ))}
+                  {times.length === 0 && (
+                    <div className="alert alert-warning">
+                      Debe agregar al menos 1 horario
+                    </div>
+                  )}
+                </div>
+                {formErrors.schedule && (
+                  <label className="label">
+                    <span className="label-text-alt text-error">{formErrors.schedule}</span>
+                  </label>
+                )}
+              </div>
+            )}
 
             {/* FORMULARIOS DINÁMICOS - Habilidades */}
             <div className="divider">Habilidades / Skills</div>

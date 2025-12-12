@@ -16,6 +16,7 @@ const initialForm = {
   github: '',
   instagram: '',
   whatsapp: '',
+  available: false,
 }
 
 const ProfileEditor = () => {
@@ -45,6 +46,7 @@ const ProfileEditor = () => {
             github: data.socials?.github || '',
             instagram: data.socials?.instagram || '',
             whatsapp: data.socials?.whatsapp || '',
+            available: data.available || false,
           })
           setSkills(data.skills || ['JavaScript', 'React'])
           // Cargar foto desde localStorage
@@ -150,6 +152,7 @@ const ProfileEditor = () => {
         bio: form.bio,
         skills: skills,
         socials,
+        available: form.available,
         updatedAt: serverTimestamp(),
       })
 
@@ -239,6 +242,19 @@ const ProfileEditor = () => {
               className="input input-bordered"
               placeholder="Ej: Frontend Developer"
             />
+          </div>
+
+          {/* Disponibilidad */}
+          <div className="form-control">
+            <label className="label cursor-pointer">
+              <span className="label-text">Disponible para asesorías</span>
+              <input
+                type="checkbox"
+                checked={form.available}
+                onChange={(e) => setForm((prev) => ({ ...prev, available: e.target.checked }))}
+                className="toggle toggle-primary"
+              />
+            </label>
           </div>
 
           {/* Biografía */}

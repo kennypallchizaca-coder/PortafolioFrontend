@@ -26,6 +26,7 @@ interface Project {
   createdAt: Date
   isStatic?: boolean
   category?: 'academico' | 'laboral'
+  programmerName?: string
 }
 
 // Proyectos estáticos del equipo
@@ -256,8 +257,14 @@ const Projects = () => {
                     )}
                   </div>
 
-                  {/* Team members */}
-                  {project.teamMembers && project.teamMembers.length > 0 && (
+                  {/* Programador o team members */}
+                  {project.programmerName && (
+                    <div className="text-xs text-base-content/60 flex items-center gap-2">
+                      <span className="font-semibold">Por:</span>
+                      <span>{project.programmerName}</span>
+                    </div>
+                  )}
+                  {project.teamMembers && project.teamMembers.length > 0 && !project.programmerName && (
                     <div className="text-xs text-base-content/60 flex items-center gap-2">
                       <span className="font-semibold">Por:</span>
                       <span>{project.teamMembers.join(', ')}</span>

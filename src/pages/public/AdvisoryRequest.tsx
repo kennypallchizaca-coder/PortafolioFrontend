@@ -4,6 +4,7 @@
  */
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { addAdvisoryRequest, listProgrammers } from '../../services/firestore'
+import { sendProgrammerAdvisoryEmail } from '../../services/email'
 import type { DocumentData } from 'firebase/firestore'
 import fotoAlexis from '../../img/fotoalexis.jpg'
 
@@ -46,6 +47,8 @@ const AdvisoryRequest = () => {
   const [programmers, setProgrammers] = useState<(DocumentData & { id: string })[]>(staticProgrammers)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [availableTimes, setAvailableTimes] = useState<string[]>([])
+  const [selectedProgrammer, setSelectedProgrammer] = useState<DocumentData | null>(null)
 
   useEffect(() => {
     listProgrammers().then(firestoreProgrammers => {
@@ -57,10 +60,27 @@ const AdvisoryRequest = () => {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
+
+    if (name === 'programmerId') {
+      const programmer = programmers.find(p => p.id === value)
+      if (programmer) {
+        setSelectedProgrammer(programmer)
+        setAvailableTimes(programmer.schedule || [])
+      }
+      // Reset date and time when changing programmer
+      setForm((prev) => ({ ...prev, date: '', time: '' }))
+    }
   }
 
-  const isValid = () =>
-    form.programmerId && form.requesterName && form.requesterEmail && form.date && form.time
+  const isValid = () => {
+    if (!form.programmerId || !form.requesterName || !form.requesterEmail || !form.date || !form.time) {
+      return false
+    }
+    const selectedDate = new Date(form.date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return selectedDate >= today
+  }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -83,6 +103,17 @@ const AdvisoryRequest = () => {
         requesterName: form.requesterName,
         requesterEmail: form.requesterEmail,
         slot: { date: form.date, time: form.time },
+        note: form.note,
+      })
+
+      // Enviar notificación por email al programador
+      await sendProgrammerAdvisoryEmail({
+        programmerEmail: selectedProgrammer?.email,
+        programmerName: selectedProgrammer?.displayName,
+        requesterName: form.requesterName,
+        requesterEmail: form.requesterEmail,
+        date: form.date,
+        time: form.time,
         note: form.note,
       })
 
@@ -174,15 +205,28 @@ const AdvisoryRequest = () => {
             </div>
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Hora *</span>
+                <span className="label-text">Hora disponible *</span>
               </label>
-              <input
-                type="time"
+              <select
                 name="time"
                 value={form.time}
                 onChange={handleChange}
-                className="input input-bordered"
-              />
+                className="select select-bordered"
+                required
+                disabled={!form.programmerId}
+              >
+                <option value="">Selecciona hora</option>
+                {availableTimes.map((time) => (
+                  <option key={time} value={time}>
+                    {time}
+                  </option>
+                ))}
+              </select>
+              {!form.programmerId && (
+                <span className="label-text-alt text-base-content/60">
+                  Selecciona un programador primero
+                </span>
+              )}
             </div>
           </div>
           <div className="form-control">
