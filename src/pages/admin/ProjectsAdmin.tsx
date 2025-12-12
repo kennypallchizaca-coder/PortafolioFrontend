@@ -261,8 +261,8 @@ const ProjectsAdmin = () => {
       demoUrl: project.demoUrl || '',
       category: project.category || 'academico',
     })
-    setTechnologies(project.technologies)
-    setTeamMembers(project.teamMembers)
+    setTechnologies(project.technologies || [])
+    setTeamMembers(project.teamMembers || [])
     setEditingId(project.id)
     setShowForm(true)
   }
@@ -493,7 +493,7 @@ const ProjectsAdmin = () => {
 
                   {/* Lista dinámica de tecnologías */}
                   <div className="space-y-2">
-                    {technologies.map((tech, index) => (
+                    {(technologies || []).map((tech, index) => (
                       <div key={index} className="join w-full">
                         <input
                           type="text"
@@ -554,7 +554,7 @@ const ProjectsAdmin = () => {
 
                   {/* Lista dinámica de miembros */}
                   <div className="space-y-2">
-                    {teamMembers.map((member, index) => (
+                    {(teamMembers || []).map((member, index) => (
                       <div key={index} className="join w-full">
                         <input
                           type="text"
