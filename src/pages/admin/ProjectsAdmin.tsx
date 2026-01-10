@@ -37,7 +37,7 @@ const ProjectsAdmin = () => {
   // Arrays dinámicos
   const [technologies, setTechnologies] = useState<string[]>(['React', 'Firebase'])
   const [teamMembers, setTeamMembers] = useState<string[]>(['Alexis'])
-  
+
   // Controles temporales para agregar nuevos elementos
   const [newTechnology, setNewTechnology] = useState('')
   const [newTeamMember, setNewTeamMember] = useState('')
@@ -117,7 +117,7 @@ const ProjectsAdmin = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    
+
     // Validar en tiempo real si ya fue tocado
     if (touched[name]) {
       const fieldRules = validationRules[name as keyof typeof validationRules]
@@ -130,7 +130,7 @@ const ProjectsAdmin = () => {
 
   const handleBlur = (fieldName: string) => {
     setTouched(prev => ({ ...prev, [fieldName]: true }))
-    
+
     const fieldRules = validationRules[fieldName as keyof typeof validationRules]
     if (fieldRules) {
       const error = FormUtils.validate(formData[fieldName as keyof typeof formData], fieldRules)
@@ -161,7 +161,7 @@ const ProjectsAdmin = () => {
       console.error('❌ Error al subir imagen:', error)
       console.error('Código de error:', error.code)
       console.error('Mensaje:', error.message)
-      
+
       if (error.code === 'storage/unauthorized') {
         throw new Error('⚠️ REGLAS DE STORAGE NO APLICADAS. Ve a Firebase Console > Storage > Rules y aplica las reglas.')
       }
@@ -171,18 +171,18 @@ const ProjectsAdmin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Marcar todos los campos como tocados
     const allTouched = Object.keys(validationRules).reduce((acc, key) => {
       acc[key] = true
       return acc
     }, {} as { [key: string]: boolean })
     setTouched(allTouched)
-    
+
     // Validar formulario
     const errors = FormUtils.validateForm(formData, validationRules)
     setFormErrors(errors)
-    
+
     // Validar arrays dinámicos
     if (technologies.length < 1) {
       errors['technologies'] = 'Debe tener al menos 1 tecnología'
@@ -190,12 +190,12 @@ const ProjectsAdmin = () => {
     if (teamMembers.length < 1) {
       errors['teamMembers'] = 'Debe tener al menos 1 miembro del equipo'
     }
-    
+
     if (FormUtils.hasErrors(errors)) {
       alert('Por favor corrige los errores en el formulario.')
       return
     }
-    
+
     setLoading(true)
 
     try {
@@ -232,13 +232,9 @@ const ProjectsAdmin = () => {
       }
 
       if (editingId) {
-        console.log('Actualizando proyecto:', editingId, projectData)
         await updateDoc(doc(db, 'projects', editingId), projectData)
-        console.log('✓ Proyecto actualizado exitosamente')
       } else {
-        console.log('Creando nuevo proyecto:', projectData)
-        const docRef = await addDoc(collection(db, 'projects'), projectData)
-        console.log('✓ Proyecto creado con ID:', docRef.id)
+        await addDoc(collection(db, 'projects'), projectData)
       }
 
       alert('✓ Proyecto guardado correctamente.')
@@ -418,9 +414,9 @@ const ProjectsAdmin = () => {
                     <div className="space-y-2">
                       {(imagePreview || formData.imageUrl) && (
                         <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-base-300">
-                          <img 
-                            src={imagePreview || formData.imageUrl} 
-                            alt="Preview" 
+                          <img
+                            src={imagePreview || formData.imageUrl}
+                            alt="Preview"
                             className="w-full h-full object-cover"
                           />
                         </div>
@@ -466,7 +462,7 @@ const ProjectsAdmin = () => {
                   <label className="label">
                     <span className="label-text font-bold">Tecnologías *</span>
                   </label>
-                  
+
                   {/* Input para agregar nueva tecnología */}
                   <div className="join mb-3">
                     <input
@@ -527,7 +523,7 @@ const ProjectsAdmin = () => {
                   <label className="label">
                     <span className="label-text font-bold">Miembros del Equipo *</span>
                   </label>
-                  
+
                   {/* Input para agregar nuevo miembro */}
                   <div className="join mb-3">
                     <input

@@ -68,19 +68,16 @@ const ProjectsPage = () => {
 
   const uploadImage = async (file: File): Promise<string> => {
     try {
-      console.log('📸 Subiendo imagen proyecto:', file.name)
       const timestamp = Date.now()
       const storageRef = ref(storage, `projects/${timestamp}_${file.name}`)
       const snapshot = await uploadBytes(storageRef, file)
-      console.log('✅ Imagen subida:', snapshot.metadata.fullPath)
       const url = await getDownloadURL(storageRef)
-      console.log('🔗 URL:', url)
       return url
     } catch (error: any) {
       console.error('❌ Error al subir imagen:', error)
       console.error('Código de error:', error.code)
       console.error('Mensaje:', error.message)
-      
+
       if (error.code === 'storage/unauthorized') {
         throw new Error('⚠️ REGLAS DE STORAGE NO APLICADAS. Ve a Firebase Console > Storage > Rules.')
       }
@@ -124,13 +121,11 @@ const ProjectsPage = () => {
 
       // Guardar imagen en localStorage DESPUÉS de tener el ID real
       if (imageFile && projectId) {
-        console.log('📸 Guardando imagen en localStorage con ID:', projectId)
         const reader = new FileReader()
         await new Promise<void>((resolve) => {
           reader.onloadend = () => {
             const base64 = reader.result as string
             localStorage.setItem(`project_img_${projectId}`, base64)
-            console.log('✅ Imagen guardada en localStorage')
             resolve()
           }
           reader.readAsDataURL(imageFile)
@@ -271,7 +266,7 @@ const ProjectsPage = () => {
                 placeholder="React, Firebase, Tailwind"
               />
             </div>
-            
+
             {/* Imagen del proyecto */}
             <div className="form-control">
               <label className="label">
@@ -297,7 +292,7 @@ const ProjectsPage = () => {
                 </label>
               </div>
             </div>
-            
+
             <div className="grid gap-3 md:grid-cols-2">
               <div className="form-control">
                 <label className="label">

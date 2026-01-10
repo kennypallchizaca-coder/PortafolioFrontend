@@ -35,18 +35,14 @@ const USERS_COLLECTION = 'users'
 // Login con Google y creación del usuario en Firestore
 export const loginWithGoogle = async () => {
   try {
-    console.log('🔑 Iniciando login con Google...')
     const result = await signInWithPopup(auth, googleProvider)
     const user = result.user
-    
-    console.log(' Login exitoso:', user.email)
-    
+
     // Crear o actualizar usuario en Firestore
     const userRef = doc(db, USERS_COLLECTION, user.uid)
     const userDoc = await getDoc(userRef)
-    
+
     if (!userDoc.exists()) {
-      console.log('Creando usuario en Firestore...')
       await setDoc(userRef, {
         displayName: user.displayName,
         email: user.email,
@@ -54,11 +50,8 @@ export const loginWithGoogle = async () => {
         role: 'external' as Role,
         createdAt: serverTimestamp(),
       })
-      console.log('Usuario creado en Firestore')
-    } else {
-      console.log('Usuario ya existe en Firestore')
     }
-    
+
     return user
   } catch (error: any) {
     console.error('Error en login:', error.code, error.message)

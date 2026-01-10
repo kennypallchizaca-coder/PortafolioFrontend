@@ -60,14 +60,11 @@ const ProgrammerDirectory = () => {
 
   useEffect(() => {
     const load = async () => {
-      console.log('👥 Cargando programadores desde Firestore (vista pública)...')
       try {
         const data = await listProgrammers()
-        console.log(`✅ ${data.length} programadores cargados desde Firebase:`, data)
         // Combinar programadores estáticos con los de Firebase
         const allProgrammers = [...staticTeam, ...data]
         setProgrammers(allProgrammers)
-        console.log(`📋 Total de programadores (estáticos + Firebase): ${allProgrammers.length}`)
       } catch (error) {
         console.error('❌ Error al cargar programadores:', error)
         // Si falla, mostrar solo los estáticos
@@ -134,20 +131,20 @@ const ProgrammerDirectory = () => {
           >
             {/* Gradient background decoration */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
+
             <div className="relative p-8 space-y-6">
               {/* Avatar centrado con efecto */}
               <div className="flex flex-col items-center text-center space-y-4">
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   className="avatar"
                 >                  <div className="w-24 h-24 rounded-full ring-4 ring-primary/20 ring-offset-4 ring-offset-base-100 shadow-lg">
                     {dev.isStatic && dev.photoURL ? (
                       <img src={dev.photoURL} alt={dev.displayName} className="object-cover" />
                     ) : !dev.isStatic ? (
-                      <LocalImage 
-                        uid={dev.id} 
-                        type="photo" 
+                      <LocalImage
+                        uid={dev.id}
+                        type="photo"
                         fallback={dev.photoURL}
                         alt={dev.displayName}
                         className="object-cover"
@@ -190,7 +187,7 @@ const ProgrammerDirectory = () => {
               <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 {dev.displayName}
               </h2>
-              
+
               {/* Bio */}
               <p className="text-sm text-base-content/70 leading-relaxed text-center min-h-[4.5rem]">
                 {dev.bio || 'Desarrollador profesional con experiencia en múltiples tecnologías.'}

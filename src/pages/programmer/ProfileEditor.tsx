@@ -79,18 +79,15 @@ const ProfileEditor = () => {
 
   const uploadPhoto = async (uid: string, file: File): Promise<string> => {
     try {
-      console.log('📸 Subiendo foto de perfil:', file.name)
       const storageRef = ref(storage, `programmers/${uid}/profile.jpg`)
       const snapshot = await uploadBytes(storageRef, file)
-      console.log('✅ Foto subida:', snapshot.metadata.fullPath)
       const url = await getDownloadURL(storageRef)
-      console.log('🔗 URL obtenida:', url)
       return url
     } catch (error: any) {
       console.error('❌ Error al subir foto:', error)
       console.error('Código de error:', error.code)
       console.error('Mensaje:', error.message)
-      
+
       if (error.code === 'storage/unauthorized') {
         throw new Error('⚠️ REGLAS DE STORAGE NO APLICADAS. Ve a Firebase Console > Storage > Rules.')
       }
@@ -110,18 +107,15 @@ const ProfileEditor = () => {
     setError('')
 
     try {
-      console.log('🔄 Iniciando actualización de perfil...')
       let photoURL = user.photoURL
 
       // Guardar foto en localStorage si hay una nueva
       if (photoFile) {
-        console.log('📸 Guardando foto en localStorage...')
         const reader = new FileReader()
         photoURL = await new Promise<string>((resolve) => {
           reader.onloadend = () => {
             const base64 = reader.result as string
             localStorage.setItem(`photo_${user.uid}`, base64)
-            console.log('✅ Foto guardada en localStorage')
             resolve(base64)
           }
           reader.readAsDataURL(photoFile)
@@ -134,17 +128,9 @@ const ProfileEditor = () => {
       if (form.instagram) socials.instagram = form.instagram
       if (form.whatsapp) socials.whatsapp = form.whatsapp
 
-      console.log('📝 Datos a guardar:', {
-        displayName: form.displayName,
-        specialty: form.specialty,
-        bio: form.bio,
-        socials
-      })
-
       // Actualizar documento en Firestore (sin photoURL)
       const docRef = doc(db, 'users', user.uid)
-      console.log('🔥 Actualizando Firestore documento:', user.uid)
-      
+
       await updateDoc(docRef, {
         displayName: form.displayName,
         email: form.email,
@@ -156,7 +142,6 @@ const ProfileEditor = () => {
         updatedAt: serverTimestamp(),
       })
 
-      console.log('✅ Perfil actualizado en Firestore')
       setMessage('✓ Perfil actualizado correctamente.')
       setPhotoFile(null)
     } catch (err: any) {
