@@ -1,13 +1,15 @@
 /**
  * Bandeja de solicitudes de asesoría para usuarios externos.
  * Permite ver el estado de las solicitudes y crear nuevas.
+ * SEGURIDAD: Solo usuarios autenticados pueden ver sus propias solicitudes.
  */
 import { useState, FormEvent } from 'react'
 import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore'
 import { db } from '../../services/firebase'
 import { addAdvisoryRequest, listProgrammers } from '../../services/firestore'
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 const initialForm = {
   programmerId: '',
@@ -19,6 +21,8 @@ const initialForm = {
 }
 
 const MyAdvisoryRequests = () => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [searchPerformed, setSearchPerformed] = useState(false)
   const [requests, setRequests] = useState<(DocumentData & { id: string })[]>([])
@@ -30,37 +34,53 @@ const MyAdvisoryRequests = () => {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState('')
 
+  // Redirigir a login si no está autenticado
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login')
+    }
+  }, [authLoading, isAuthenticated, navigate])
+
+  // Cargar programadores
   useEffect(() => {
     listProgrammers().then(setProgrammers)
   }, [])
 
-  const searchRequests = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!email.trim()) {
-      setError('Ingresa tu correo electrónico.')
-      return
+  // Auto-cargar solicitudes del usuario autenticado
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email)
+      setForm(prev => ({ ...prev, requesterEmail: user.email || '' }))
+      loadUserRequests(user.email)
     }
+  }, [user?.email])
 
+  const loadUserRequests = async (userEmail: string) => {
     setLoading(true)
     setError('')
     setSearchPerformed(true)
-    
+
     try {
       const q = query(
         collection(db, 'advisories'),
-        where('requesterEmail', '==', email.trim())
+        where('requesterEmail', '==', userEmail)
       )
       const snapshot = await getDocs(q)
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
       setRequests(data)
-      
-      // Pre-llenar el formulario con el email
-      setForm(prev => ({ ...prev, requesterEmail: email.trim() }))
     } catch (err) {
       console.error('Error al buscar solicitudes:', err)
       setError('No se pudieron cargar las solicitudes. Intenta nuevamente.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const searchRequests = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    // Usar solo el email del usuario autenticado
+    if (user?.email) {
+      await loadUserRequests(user.email)
     }
   }
 
@@ -92,11 +112,11 @@ const MyAdvisoryRequests = () => {
         slot: { date: form.date, time: form.time },
         note: form.note,
       })
-      
+
       setMessage('Solicitud enviada exitosamente. Te avisaremos por correo cuando el programador responda.')
       setForm({ ...initialForm, requesterEmail: email })
       setShowNewRequestForm(false)
-      
+
       // Recargar solicitudes
       await searchRequests(e as any)
     } catch (err) {
@@ -143,18 +163,17 @@ const MyAdvisoryRequests = () => {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu-correo@ejemplo.com"
                 className="input input-bordered"
-                required
+                disabled
+                title="Email de usuario autenticado"
               />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? 'Buscando...' : 'Buscar Solicitudes'}
+              {loading ? 'Recargando...' : 'Recargar'}
             </button>
           </form>
         </div>
@@ -171,7 +190,7 @@ const MyAdvisoryRequests = () => {
               {requests.length === 0 ? 'No se encontraron solicitudes' : `${requests.length} solicitud(es) encontrada(s)`}
             </h2>
             {requests.length > 0 && !showNewRequestForm && (
-              <button 
+              <button
                 className="btn btn-primary btn-sm"
                 onClick={() => setShowNewRequestForm(true)}
               >
@@ -186,14 +205,14 @@ const MyAdvisoryRequests = () => {
               <div className="card-body">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Nueva Solicitud</h3>
-                  <button 
+                  <button
                     className="btn btn-ghost btn-sm"
                     onClick={() => setShowNewRequestForm(false)}
                   >
                     ✕
                   </button>
                 </div>
-                
+
                 <form onSubmit={handleSubmitNewRequest} className="space-y-4">
                   <div className="form-control">
                     <label className="label">
@@ -289,15 +308,15 @@ const MyAdvisoryRequests = () => {
                   </div>
 
                   <div className="card-actions justify-end">
-                    <button 
+                    <button
                       type="button"
                       className="btn btn-ghost"
                       onClick={() => setShowNewRequestForm(false)}
                     >
                       Cancelar
                     </button>
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       className="btn btn-primary"
                       disabled={submitting}
                     >

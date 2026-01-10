@@ -9,10 +9,19 @@ import { useState, useEffect } from 'react'
 import { GalaxyComponent } from '@r0rri/react-galaxy-bg'
 import headerImg from '../../img/header-img.svg'
 import { FiArrowDown, FiCode, FiUsers, FiZap, FiStar } from 'react-icons/fi'
+import { useAuth } from '../../context/AuthContext'
 
 const Home = () => {
+  const { role, isAuthenticated } = useAuth()
   const prefersReducedMotion = useReducedMotion()
   const allowMotion = !prefersReducedMotion
+
+  const handleAdvisoryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isAuthenticated) {
+      e.preventDefault()
+      alert('Necesitas iniciar sesión para solicitar una asesoría.')
+    }
+  }
 
   // ------------------------------
   // EFECTO DE TEXTO DINÁMICO
@@ -329,14 +338,18 @@ const Home = () => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-wrap justify-center gap-4 pt-8">
-              <Link
-                to="/agendar-asesoria"
-                className="btn btn-lg px-8 bg-gradient-to-r from-primary to-secondary text-white border-0 shadow-xl hover:scale-105 transition-all duration-200"
-              >
-                Solicitar Asesoría
-              </Link>
-            </div>
+            {/* Solo visible para no autenticados o externos, oculto para programmers/admins */}
+            {(!isAuthenticated || role === 'external') && (
+              <div className="flex flex-wrap justify-center gap-4 pt-8">
+                <Link
+                  to="/agendar-asesoria"
+                  className="btn btn-lg px-8 bg-gradient-to-r from-primary to-secondary text-white border-0 shadow-xl hover:scale-105 transition-all duration-200"
+                  onClick={handleAdvisoryClick}
+                >
+                  Solicitar Asesoría
+                </Link>
+              </div>
+            )}
 
           </motion.div>
         </div>
