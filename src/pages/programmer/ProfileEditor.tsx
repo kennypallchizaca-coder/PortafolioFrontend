@@ -1,12 +1,16 @@
 /**
  * Editor de perfil del programador (foto, nombre, bio, especialidad).
+ * Heurísticas aplicadas: #5 Prevención de errores, #2 Feedback inmediato, #9 Mensajes claros
  */
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../services/firebase'
-import { FiCamera, FiSave } from 'react-icons/fi'
+import { FormUtils } from '../../utils/FormUtils'
+import FormInput from '../../components/FormInput'
+import FormTextarea from '../../components/FormTextarea'
+import { FiCamera, FiSave, FiPlus, FiX } from 'react-icons/fi'
 
 const initialForm = {
   displayName: '',
@@ -29,6 +33,32 @@ const ProfileEditor = () => {
   const [photoPreview, setPhotoPreview] = useState('')
   const [skills, setSkills] = useState<string[]>(['JavaScript', 'React'])
   const [newSkill, setNewSkill] = useState('')
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
+
+  // Reglas de validación
+  const validationRules = {
+    displayName: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.minLength(val, 3),
+      (val: string) => FormUtils.maxLength(val, 100),
+    ],
+    email: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.email(val),
+    ],
+    specialty: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.minLength(val, 3),
+    ],
+    bio: [
+      (val: string) => val && FormUtils.minLength(val, 10),
+      (val: string) => val && FormUtils.maxLength(val, 500),
+    ],
+    github: [(val: string) => val && FormUtils.url(val)],
+    instagram: [(val: string) => val && FormUtils.url(val)],
+    whatsapp: [(val: string) => val && FormUtils.url(val)],
+  }
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -63,6 +93,25 @@ const ProfileEditor = () => {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
+
+    // Validar en tiempo real si ya fue tocado
+    if (touched[name]) {
+      const fieldRules = validationRules[name as keyof typeof validationRules]
+      if (fieldRules) {
+        const error = FormUtils.validate(value, fieldRules)
+        setFormErrors(prev => ({ ...prev, [name]: error || '' }))
+      }
+    }
+  }
+
+  const handleBlur = (fieldName: string) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }))
+
+    const fieldRules = validationRules[fieldName as keyof typeof validationRules]
+    if (fieldRules) {
+      const error = FormUtils.validate(form[fieldName as keyof typeof form], fieldRules)
+      setFormErrors(prev => ({ ...prev, [fieldName]: error || '' }))
+    }
   }
 
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -98,7 +147,28 @@ const ProfileEditor = () => {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!user?.uid) {
-      setError('Usuario no autenticado')
+      setError('No hay usuario autenticado')
+      return
+    }
+
+    // Marcar todos como tocados
+    const allTouched = Object.keys(validationRules).reduce((acc, key) => {
+      acc[key] = true
+      return acc
+    }, {} as { [key: string]: boolean })
+    setTouched(allTouched)
+
+    // Validar formulario
+    const errors = FormUtils.validateForm(form, validationRules)
+    setFormErrors(errors)
+
+    // Validar skills (mínimo 2)
+    if (skills.length < 2) {
+      errors['skills'] = 'Debe tener al menos 2 habilidades'
+    }
+
+    if (FormUtils.hasErrors(errors)) {
+      setError('Por favor corrige los errores en el formulario.')
       return
     }
 
@@ -186,48 +256,50 @@ const ProfileEditor = () => {
             </div>
           </div>
 
-          {/* Nombre */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Nombre completo *</span>
-            </label>
-            <input
+          {/* Campos básicos */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormInput
+              label="Nombre completo"
               name="displayName"
               value={form.displayName}
               onChange={handleChange}
-              className="input input-bordered"
+              onBlur={() => handleBlur('displayName')}
+              error={formErrors.displayName}
+              touched={touched.displayName}
               required
+              placeholder="Tu nombre"
+              maxLength={100}
             />
-          </div>
 
-          {/* Email */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Email *</span>
-            </label>
-            <input
+            <FormInput
+              label="Correo"
               name="email"
               type="email"
               value={form.email}
               onChange={handleChange}
-              className="input input-bordered"
+              onBlur={() => handleBlur('email')}
+              error={formErrors.email}
+              touched={touched.email}
               required
+              placeholder="correo@ejemplo.com"
+              autoComplete="email"
+              disabled
+              helpText="El email no se puede modificar"
             />
           </div>
 
-          {/* Especialidad */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Especialidad</span>
-            </label>
-            <input
-              name="specialty"
-              value={form.specialty}
-              onChange={handleChange}
-              className="input input-bordered"
-              placeholder="Ej: Frontend Developer"
-            />
-          </div>
+          <FormInput
+            label="Especialidad"
+            name="specialty"
+            value={form.specialty}
+            onChange={handleChange}
+            onBlur={() => handleBlur('specialty')}
+            error={formErrors.specialty}
+            touched={touched.specialty}
+            required
+            placeholder="Ej: Full Stack Developer"
+            maxLength={100}
+          />
 
           {/* Disponibilidad */}
           <div className="form-control">
@@ -242,20 +314,19 @@ const ProfileEditor = () => {
             </label>
           </div>
 
-          {/* Biografía */}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Biografía</span>
-            </label>
-            <textarea
-              name="bio"
-              value={form.bio}
-              onChange={handleChange}
-              className="textarea textarea-bordered"
-              rows={4}
-              placeholder="Cuéntanos sobre ti..."
-            />
-          </div>
+          <FormTextarea
+            label="Biografía"
+            name="bio"
+            value={form.bio}
+            onChange={handleChange}
+            onBlur={() => handleBlur('bio')}
+            error={formErrors.bio}
+            touched={touched.bio}
+            placeholder="Cuéntanos sobre ti, tu experiencia y tus intereses..."
+            rows={4}
+            minLength={10}
+            maxLength={500}
+          />
 
           {/* Habilidades */}
           <div className="form-control">
@@ -309,46 +380,45 @@ const ProfileEditor = () => {
           </div>
 
           {/* Redes sociales */}
-          <div className="divider">Redes Sociales</div>
+          <div className="divider">Redes Sociales (opcional)</div>
 
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">GitHub</span>
-              </label>
-              <input
-                name="github"
-                value={form.github}
-                onChange={handleChange}
-                className="input input-bordered input-sm"
-                placeholder="https://github.com/..."
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Instagram</span>
-              </label>
-              <input
-                name="instagram"
-                value={form.instagram}
-                onChange={handleChange}
-                className="input input-bordered input-sm"
-                placeholder="https://instagram.com/..."
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">WhatsApp</span>
-              </label>
-              <input
-                name="whatsapp"
-                value={form.whatsapp}
-                onChange={handleChange}
-                className="input input-bordered input-sm"
-                placeholder="https://wa.me/..."
-              />
-            </div>
-          </div>
+          <FormInput
+            label="GitHub"
+            name="github"
+            type="url"
+            value={form.github}
+            onChange={handleChange}
+            onBlur={() => handleBlur('github')}
+            error={formErrors.github}
+            touched={touched.github}
+            placeholder="https://github.com/tu-usuario"
+            helpText="URL completa de tu perfil"
+          />
+
+          <FormInput
+            label="Instagram"
+            name="instagram"
+            type="url"
+            value={form.instagram}
+            onChange={handleChange}
+            onBlur={() => handleBlur('instagram')}
+            error={formErrors.instagram}
+            touched={touched.instagram}
+            placeholder="https://instagram.com/tu-usuario"
+          />
+
+          <FormInput
+            label="WhatsApp"
+            name="whatsapp"
+            type="url"
+            value={form.whatsapp}
+            onChange={handleChange}
+            onBlur={() => handleBlur('whatsapp')}
+            error={formErrors.whatsapp}
+            touched={touched.whatsapp}
+            placeholder="https://wa.me/593999999999"
+            helpText="Link directo de WhatsApp"
+          />
 
           <div className="card-actions justify-end pt-2">
             <button className="btn btn-primary gap-2" type="submit" disabled={loading}>
