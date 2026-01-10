@@ -1,11 +1,16 @@
 /**
- * Formulario público para solicitar asesoría.
- * Prácticas: Formularios controlados, validación básica y feedback de errores.
+ * Formulario público para solicitar asesor ía.
+ * Prácticas: FormUtils para validación, componentes reutilizables, feedback en tiempo real.
+ * Heurísticas aplicadas: #5 Prevención de errores, #9 Mensajes de error claros
  */
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { addAdvisoryRequest, listProgrammers } from '../../services/firestore'
 import { sendProgrammerAdvisoryEmail } from '../../services/email'
 import type { DocumentData } from 'firebase/firestore'
+import { FormUtils } from '../../utils/FormUtils'
+import FormInput from '../../components/FormInput'
+import FormTextarea from '../../components/FormTextarea'
+import FormSelect from '../../components/FormSelect'
 import fotoAlexis from '../../img/fotoalexis.jpg'
 
 const initialForm = {
@@ -49,6 +54,27 @@ const AdvisoryRequest = () => {
   const [error, setError] = useState('')
   const [availableTimes, setAvailableTimes] = useState<string[]>([])
   const [selectedProgrammer, setSelectedProgrammer] = useState<DocumentData | null>(null)
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
+
+  // Reglas de validación
+  const validationRules = {
+    programmerId: [(val: string) => FormUtils.required(val)],
+    requesterName: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.minLength(val, 3),
+    ],
+    requesterEmail: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.email(val),
+    ],
+    date: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.futureDate(val),
+    ],
+    time: [(val: string) => FormUtils.required(val)],
+    note: [(val: string) => val && FormUtils.maxLength(val, 500)],
+  }
 
   useEffect(() => {
     listProgrammers().then(firestoreProgrammers => {
@@ -61,6 +87,15 @@ const AdvisoryRequest = () => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
 
+    // Validar en tiempo real si el campo ya fue tocado
+    if (touched[name]) {
+      const fieldRules = validationRules[name as keyof typeof validationRules]
+      if (fieldRules) {
+        const error = FormUtils.validate(value, fieldRules)
+        setFormErrors(prev => ({ ...prev, [name]: error || '' }))
+      }
+    }
+
     if (name === 'programmerId') {
       const programmer = programmers.find(p => p.id === value)
       if (programmer) {
@@ -69,28 +104,45 @@ const AdvisoryRequest = () => {
       }
       // Reset date and time when changing programmer
       setForm((prev) => ({ ...prev, date: '', time: '' }))
+      setTouched(prev => ({ ...prev, date: false, time: false }))
+      setFormErrors(prev => ({ ...prev, date: '', time: '' }))
     }
   }
 
-  const isValid = () => {
-    if (!form.programmerId || !form.requesterName || !form.requesterEmail || !form.date || !form.time) {
-      return false
+  const handleBlur = (fieldName: string) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }))
+
+    const fieldRules = validationRules[fieldName as keyof typeof validationRules]
+    if (fieldRules) {
+      const error = FormUtils.validate(form[fieldName as keyof typeof form], fieldRules)
+      setFormErrors(prev => ({ ...prev, [fieldName]: error || '' }))
     }
-    const selectedDate = new Date(form.date)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return selectedDate >= today
   }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!isValid()) {
-      setError('Completa los campos obligatorios.')
+
+    // Marcar todos los campos como tocados
+    const allTouched = Object.keys(validationRules).reduce((acc, key) => {
+      acc[key] = true
+      return acc
+    }, {} as { [key: string]: boolean })
+    setTouched(allTouched)
+
+    // Validar todo el formulario
+    const errors = FormUtils.validateForm(form, validationRules)
+    setFormErrors(errors)
+
+    if (FormUtils.hasErrors(errors)) {
+      setError('Por favor corrige los errores en el formulario.')
       return
     }
     setLoading(true)
     setError('')
     setMessage('')
+
+    // Sanitizar nota para prevenir XSS
+    const sanitizedNote = form.note ? FormUtils.sanitizeHTML(form.note) : ''
     try {
       const selectedProgrammer = programmers.find(
         (p) => p.id === form.programmerId,
@@ -100,10 +152,10 @@ const AdvisoryRequest = () => {
         programmerId: form.programmerId,
         programmerEmail: selectedProgrammer?.email,
         programmerName: selectedProgrammer?.displayName,
-        requesterName: form.requesterName,
-        requesterEmail: form.requesterEmail,
+        requesterName: form.requesterName.trim(),
+        requesterEmail: form.requesterEmail.trim().toLowerCase(),
         slot: { date: form.date, time: form.time },
-        note: form.note,
+        note: sanitizedNote,
       })
 
       // Enviar notificación por email al programador
@@ -111,16 +163,20 @@ const AdvisoryRequest = () => {
         programmerEmail: selectedProgrammer?.email,
         programmerName: selectedProgrammer?.displayName,
         requesterName: form.requesterName,
-        requesterEmail: form.requesterEmail,
+        requesterEmail: form.requesterEmail.trim().toLowerCase(),
         date: form.date,
         time: form.time,
-        note: form.note,
+        note: sanitizedNote,
       })
 
       setMessage(
-        'Solicitud enviada. El programador recibira un correo y te avisaremos por email cuando responda.',
+        '✅ Solicitud enviada exitosamente. El programador recibirá un correo y te avisaremos cuando responda.',
       )
       setForm(initialForm)
+      setFormErrors({})
+      setTouched({})
+      setAvailableTimes([])
+      setSelectedProgrammer(null)
     } catch (err) {
       console.error('Error al enviar solicitud:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -141,109 +197,118 @@ const AdvisoryRequest = () => {
         <div className="card-body space-y-4">
           {message && <div className="alert alert-success text-sm">{message}</div>}
           {error && <div className="alert alert-error text-sm">{error}</div>}
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Programador *</span>
-            </label>
-            <select
-              name="programmerId"
-              value={form.programmerId}
+
+          <FormSelect
+            label="Programador"
+            name="programmerId"
+            value={form.programmerId}
+            onChange={handleChange}
+            onBlur={() => handleBlur('programmerId')}
+            error={formErrors.programmerId}
+            touched={touched.programmerId}
+            required
+            helpText="Lista cargada desde Firestore (rol programmer)"
+          >
+            <option value="">Selecciona un programador</option>
+            {programmers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.displayName} · {p.specialty}
+              </option>
+            ))}
+          </FormSelect>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormInput
+              label="Tu nombre"
+              name="requesterName"
+              value={form.requesterName}
               onChange={handleChange}
-              className="select select-bordered"
+              onBlur={() => handleBlur('requesterName')}
+              error={formErrors.requesterName}
+              touched={touched.requesterName}
               required
-            >
-              <option value="">Selecciona</option>
-              {programmers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.displayName} · {p.specialty}
-                </option>
-              ))}
-            </select>
-            <span className="label-text-alt text-base-content/60">
-              Lista cargada desde Firestore (rol programmer).
-            </span>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Tu nombre *</span>
-              </label>
-              <input
-                name="requesterName"
-                value={form.requesterName}
-                onChange={handleChange}
-                className="input input-bordered"
-                placeholder="Nombre de quien solicita"
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Correo *</span>
-              </label>
-              <input
-                type="email"
-                name="requesterEmail"
-                value={form.requesterEmail}
-                onChange={handleChange}
-                className="input input-bordered"
-                placeholder="correo@ejemplo.com"
-              />
-            </div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Fecha *</span>
-              </label>
-              <input
-                type="date"
-                name="date"
-                value={form.date}
-                onChange={handleChange}
-                className="input input-bordered"
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Hora disponible *</span>
-              </label>
-              <select
-                name="time"
-                value={form.time}
-                onChange={handleChange}
-                className="select select-bordered"
-                required
-                disabled={!form.programmerId}
-              >
-                <option value="">Selecciona hora</option>
-                {availableTimes.map((time) => (
-                  <option key={time} value={time}>
-                    {time}
-                  </option>
-                ))}
-              </select>
-              {!form.programmerId && (
-                <span className="label-text-alt text-base-content/60">
-                  Selecciona un programador primero
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Motivo / nota</span>
-            </label>
-            <textarea
-              name="note"
-              value={form.note}
+              placeholder="Nombre de quien solicita"
+              maxLength={100}
+            />
+
+            <FormInput
+              label="Correo"
+              name="requesterEmail"
+              type="email"
+              value={form.requesterEmail}
               onChange={handleChange}
-              className="textarea textarea-bordered"
-              rows={3}
+              onBlur={() => handleBlur('requesterEmail')}
+              error={formErrors.requesterEmail}
+              touched={touched.requesterEmail}
+              required
+              placeholder="correo@ejemplo.com"
+              autoComplete="email"
             />
           </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormInput
+              label="Fecha"
+              name="date"
+              type="date"
+              value={form.date}
+              onChange={handleChange}
+              onBlur={() => handleBlur('date')}
+              error={formErrors.date}
+              touched={touched.date}
+              required
+              helpText="Selecciona una fecha futura"
+              disabled={!form.programmerId}
+            />
+
+            <FormSelect
+              label="Hora disponible"
+              name="time"
+              value={form.time}
+              onChange={handleChange}
+              onBlur={() => handleBlur('time')}
+              error={formErrors.time}
+              touched={touched.time}
+              required
+              disabled={!form.programmerId || availableTimes.length === 0}
+              helpText={!form.programmerId ? 'Selecciona un programador primero' : undefined}
+            >
+              <option value="">Selecciona hora</option>
+              {availableTimes.map((time) => (
+                <option key={time} value={time}>
+                  {time}
+                </option>
+              ))}
+            </FormSelect>
+          </div>
+
+          <FormTextarea
+            label="Motivo / nota"
+            name="note"
+            value={form.note}
+            onChange={handleChange}
+            onBlur={() => handleBlur('note')}
+            error={formErrors.note}
+            touched={touched.note}
+            placeholder="Describe brevemente el tema de la asesoría (opcional)"
+            rows={3}
+            maxLength={500}
+          />
+
           <div className="card-actions justify-end">
-            <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? 'Enviando...' : 'Enviar solicitud'}
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={loading || FormUtils.hasErrors(formErrors)}
+            >
+              {loading ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Enviando...
+                </>
+              ) : (
+                '📧 Enviar solicitud'
+              )}
             </button>
           </div>
         </div>
