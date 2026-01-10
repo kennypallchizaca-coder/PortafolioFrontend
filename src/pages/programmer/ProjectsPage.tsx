@@ -1,6 +1,6 @@
 /**
- * Gestión de proyectos del programador.
- * Prácticas: Formularios controlados, validación, estados de carga, consumo Firestore.
+ * Página de gestión de proyectos del programador.
+ * Heurísticas aplicadas: #5 Prevención de errores, #9 Mensajes claros
  */
 import { useEffect, useState, useCallback, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
@@ -8,7 +8,10 @@ import { addProject, listProjectsByOwner, updateProject } from '../../services/f
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '../../services/firebase'
 import type { DocumentData } from 'firebase/firestore'
-import { FiImage } from 'react-icons/fi'
+import { FormUtils } from '../../utils/FormUtils'
+import FormInput from '../../components/FormInput'
+import FormTextarea from '../../components/FormTextarea'
+import { FiPlus, FiX, FiImage, FiGithub } from 'react-icons/fi'
 
 const emptyProject = {
   title: '',
@@ -32,6 +35,26 @@ const ProjectsPage = () => {
   const [error, setError] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
+  const [technologies, setTechnologies] = useState<string[]>(['React'])
+  const [newTech, setNewTech] = useState('')
+  const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
+  const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
+
+  // Reglas de validación
+  const validationRules = {
+    title: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.minLength(val, 3),
+      (val: string) => FormUtils.maxLength(val, 100),
+    ],
+    description: [
+      (val: string) => FormUtils.required(val),
+      (val: string) => FormUtils.minLength(val, 10),
+      (val: string) => FormUtils.maxLength(val, 500),
+    ],
+    repoUrl: [(val: string) => val && FormUtils.url(val)],
+    demoUrl: [(val: string) => val && FormUtils.url(val)],
+  }
 
   const loadProjects = useCallback(async () => {
     if (!user?.uid) return
@@ -52,6 +75,25 @@ const ProjectsPage = () => {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
+
+    // Validar en tiempo real si ya fue tocado
+    if (touched[name]) {
+      const fieldRules = validationRules[name as keyof typeof validationRules]
+      if (fieldRules) {
+        const error = FormUtils.validate(value, fieldRules)
+        setFormErrors(prev => ({ ...prev, [name]: error || '' }))
+      }
+    }
+  }
+
+  const handleBlur = (fieldName: string) => {
+    setTouched(prev => ({ ...prev, [fieldName]: true }))
+
+    const fieldRules = validationRules[fieldName as keyof typeof validationRules]
+    if (fieldRules) {
+      const error = FormUtils.validate(form[fieldName as keyof typeof form], fieldRules)
+      setFormErrors(prev => ({ ...prev, [fieldName]: error || '' }))
+    }
   }
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +132,29 @@ const ProjectsPage = () => {
     setLoading(true)
     setMessage('')
     setError('')
+    if (!user?.uid) return
+
+    // Marcar todos como tocados
+    const allTouched = Object.keys(validationRules).reduce((acc, key) => {
+      acc[key] = true
+      return acc
+    }, {} as { [key: string]: boolean })
+    setTouched(allTouched)
+
+    // Validar formulario
+    const errors = FormUtils.validateForm(form, validationRules)
+    setFormErrors(errors)
+
+    // Validar al menos 1 tecnología
+    if (technologies.length < 1) {
+      errors['technologies'] = 'Debe tener al menos 1 tecnología'
+    }
+
+    if (FormUtils.hasErrors(errors)) {
+      setError('Por favor corrige los errores en el formulario.')
+      setLoading(false)
+      return
+    }
     try {
       if (!user?.uid) throw new Error('Usuario no autenticado')
 
@@ -186,30 +251,33 @@ const ProjectsPage = () => {
             </div>
             {message && <div className="alert alert-success text-sm">{message}</div>}
             {error && <div className="alert alert-error text-sm">{error}</div>}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Título *</span>
-              </label>
-              <input
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-                className="input input-bordered"
-                required
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Descripción</span>
-              </label>
-              <textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                className="textarea textarea-bordered"
-                rows={3}
-              />
-            </div>
+            <FormInput
+              label="Título del proyecto"
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              onBlur={() => handleBlur('title')}
+              error={formErrors.title}
+              touched={touched.title}
+              required
+              placeholder="Nombre del proyecto"
+              maxLength={100}
+            />
+
+            <FormTextarea
+              label="Descripción"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              onBlur={() => handleBlur('description')}
+              error={formErrors.description}
+              touched={touched.description}
+              required
+              placeholder="Describe el proyecto, qué hace, tecnologías usadas, tu rol..."
+              rows={4}
+              minLength={10}
+              maxLength={500}
+            />
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Nombre del programador</span>
@@ -293,31 +361,32 @@ const ProjectsPage = () => {
               </div>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Repo</span>
-                </label>
-                <input
-                  name="repoUrl"
-                  value={form.repoUrl}
-                  onChange={handleChange}
-                  className="input input-bordered"
-                  placeholder="https://github.com/..."
-                />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Demo</span>
-                </label>
-                <input
-                  name="demoUrl"
-                  value={form.demoUrl}
-                  onChange={handleChange}
-                  className="input input-bordered"
-                  placeholder="https://app..."
-                />
-              </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormInput
+                label="GitHub Repository"
+                name="repoUrl"
+                type="url"
+                value={form.repoUrl}
+                onChange={handleChange}
+                onBlur={() => handleBlur('repoUrl')}
+                error={formErrors.repoUrl}
+                touched={touched.repoUrl}
+                placeholder="https://github.com/..."
+                helpText="URL del repositorio (opcional)"
+              />
+
+              <FormInput
+                label="Demo/Live URL"
+                name="demoUrl"
+                type="url"
+                value={form.demoUrl}
+                onChange={handleChange}
+                onBlur={() => handleBlur('demoUrl')}
+                error={formErrors.demoUrl}
+                touched={touched.demoUrl}
+                placeholder="https://..."
+                helpText="URL del proyecto desplegado (opcional)"
+              />
             </div>
             <div className="card-actions justify-end">
               <button className="btn btn-primary" type="submit" disabled={loading}>
