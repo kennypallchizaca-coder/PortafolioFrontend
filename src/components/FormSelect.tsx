@@ -1,35 +1,26 @@
 /**
- * Componente reutilizable de textarea de formulario con validación integrada.
+ * Componente reutilizable de select de formulario con validación integrada.
  * 
- * Implementa heurísticas de UX:
- * - Contador de caracteres en tiempo real
- * - Feedback visual de errores
- * - Redimensionamiento automático
- * - Accesibilidad (ARIA labels)
- * 
- * @module components/FormTextarea
+ * @module components/FormSelect
  * @author LEXISWARE - Proyecto Académico PPW
  */
-import { ChangeEvent } from 'react'
+import { ChangeEvent, ReactNode } from 'react'
 
-interface FormTextareaProps {
+interface FormSelectProps {
     label: string
     name: string
     value: string
-    onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void
+    onChange: (e: ChangeEvent<HTMLSelectElement>) => void
     onBlur?: () => void
     error?: string
     touched?: boolean
     required?: boolean
-    placeholder?: string
     helpText?: string
     disabled?: boolean
-    rows?: number
-    maxLength?: number
-    minLength?: number
+    children: ReactNode
 }
 
-export const FormTextarea: React.FC<FormTextareaProps> = ({
+export const FormSelect: React.FC<FormSelectProps> = ({
     label,
     name,
     value,
@@ -38,29 +29,18 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
     error,
     touched,
     required,
-    placeholder,
     helpText,
     disabled,
-    rows = 4,
-    maxLength,
-    minLength,
+    children,
 }) => {
     const hasError = touched && error
-    const textareaId = `textarea-${name}`
+    const selectId = `select-${name}`
     const errorId = `${name}-error`
     const helpId = `${name}-help`
 
-    const getCharCountColor = () => {
-        if (!maxLength) return 'text-base-content/60'
-        const percentage = (value.length / maxLength) * 100
-        if (percentage >= 90) return 'text-error'
-        if (percentage >= 70) return 'text-warning'
-        return 'text-base-content/60'
-    }
-
     return (
         <div className="form-control">
-            <label className="label" htmlFor={textareaId}>
+            <label className="label" htmlFor={selectId}>
                 <span className="label-text">
                     {label} {required && <span className="text-error font-bold">*</span>}
                 </span>
@@ -74,39 +54,31 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
                     </span>
                 )}
             </label>
-            <textarea
-                id={textareaId}
+            <select
+                id={selectId}
                 name={name}
                 value={value}
                 onChange={onChange}
                 onBlur={onBlur}
-                placeholder={placeholder}
                 disabled={disabled}
-                rows={rows}
-                maxLength={maxLength}
-                className={`textarea textarea-bordered w-full ${hasError ? 'textarea-error' : ''
-                    } ${disabled ? 'textarea-disabled' : ''}`}
+                className={`select select-bordered w-full ${hasError ? 'select-error' : ''
+                    } ${disabled ? 'select-disabled' : ''}`}
                 aria-invalid={hasError ? 'true' : 'false'}
                 aria-describedby={`${hasError ? errorId : ''} ${helpText ? helpId : ''}`.trim()}
                 aria-required={required}
-            />
-            <div className="label">
-                <span className="label-text-alt">
-                    {hasError && (
-                        <span id={errorId} className="text-error flex items-center gap-1">
-                            <span>⚠️</span>
-                            <span>{error}</span>
-                        </span>
-                    )}
-                </span>
-                <span className={`label-text-alt ${getCharCountColor()}`}>
-                    {value.length}
-                    {minLength && ` (mín: ${minLength})`}
-                    {maxLength && `/${maxLength}`}
-                </span>
-            </div>
+            >
+                {children}
+            </select>
+            {hasError && (
+                <label className="label">
+                    <span id={errorId} className="label-text-alt text-error flex items-center gap-1">
+                        <span>⚠️</span>
+                        <span>{error}</span>
+                    </span>
+                </label>
+            )}
         </div>
     )
 }
 
-export default FormTextarea
+export default FormSelect
