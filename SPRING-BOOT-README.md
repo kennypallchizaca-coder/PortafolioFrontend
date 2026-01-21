@@ -1,17 +1,22 @@
 # 🚀 Backend Spring Boot - LEXISWARE Portafolio
 
+> ⚠️ **IMPORTANTE**: Este backend usa **PostgreSQL** como base de datos principal (en Docker).  
+> Firebase solo se usa para **autenticación** (Firebase Auth), NO para almacenar datos.
+
 ## 📋 Tabla de Contenidos
 1. [Prerrequisitos](#prerrequisitos)
-2. [Inicialización del Proyecto](#inicialización-del-proyecto)
-3. [Estructura del Proyecto](#estructura-del-proyecto)
-4. [Configuración](#configuración)
-5. [Entidades y Modelos](#entidades-y-modelos)
-6. [Repositorios](#repositorios)
-7. [Servicios](#servicios)
-8. [Controladores REST](#controladores-rest)
-9. [Seguridad con Firebase](#seguridad-con-firebase)
-10. [Testing](#testing)
-11. [Deployment](#deployment)
+2. [Arquitectura del Sistema](#arquitectura-del-sistema)
+3. [Setup PostgreSQL con Docker](#setup-postgresql-con-docker)
+4. [Inicialización del Proyecto](#inicialización-del-proyecto)
+5. [Estructura del Proyecto](#estructura-del-proyecto)
+6. [Configuración](#configuración)
+7. [Entidades y Modelos](#entidades-y-modelos)
+8. [Repositorios](#repositorios)
+9. [Servicios](#servicios)
+10. [Controladores REST](#controladores-rest)
+11. [Seguridad con Firebase Auth](#seguridad-con-firebase-auth)
+12. [Testing](#testing)
+13. [Deployment](#deployment)
 
 ---
 
@@ -20,15 +25,150 @@
 ### Software Requerido
 - ✅ **Java 17+** (LTS)
 - ✅ **Maven 3.8+** o **Gradle 8+**
-- ✅ **PostgreSQL 14+** (o MySQL 8+)
+- ✅ **Docker Desktop** (para PostgreSQL)
 - ✅ **Git**
 - ✅ **IDE**: IntelliJ IDEA / Eclipse / VS Code
+- ✅ **Postman** o **Thunder Client** (para testing)
 
 ### Verificar Instalaciones
 ```bash
 java -version    # Debe mostrar Java 17 o superior
 mvn -version     # Maven 3.8+
-psql --version   # PostgreSQL 14+
+docker --version # Docker 20+
+docker-compose --version
+```
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+```
+┌─────────────┐      HTTP/REST      ┌──────────────────┐
+│   Frontend  │ ─────────────────> │  Spring Boot API │
+│  (React +   │ <───────────────── │   (Port 8080)    │
+│   Vite)     │   Firebase Token   │                  │
+└─────────────┘                     └─────────┬────────┘
+                                              │
+                     ┌────────────────────────┼────────────────┐
+                     │                        │                │
+                     ▼                        ▼                ▼
+            ┌─────────────────┐    ┌──────────────┐   ┌──────────────┐
+            │  Firebase Auth  │    │  PostgreSQL  │   │  EmailJS API │
+            │ (Autenticación) │    │  (Database)  │   │   (Emails)   │
+            └─────────────────┘    │  in Docker   │   └──────────────┘
+                                   │  Port 5432   │
+                                   └──────────────┘
+```
+
+### Stack Tecnológico
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Spring Boot 3.2 + Java 17
+- **Base de Datos**: PostgreSQL 15 (Docker)
+- **Autenticación**: Firebase Auth (solo tokens JWT)
+- **ORM**: Spring Data JPA + Hibernate
+- **API**: RESTful con JSON
+- **Deployment**: Railway / Render / Docker
+
+---
+
+## 🐳 Setup PostgreSQL con Docker
+
+### 1. Crear `docker-compose.yml`
+
+En la raíz del proyecto backend:
+
+```yaml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: portafolio-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: portafolio_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - portafolio-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: portafolio-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@lexisware.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8081:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - portafolio-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  portafolio-network:
+    driver: bridge
+```
+
+### 2. Iniciar PostgreSQL
+
+```bash
+# Iniciar contenedores
+docker-compose up -d
+
+# Verificar que estén corriendo
+docker-compose ps
+
+# Ver logs
+docker-compose logs -f postgres
+```
+
+### 3. Acceder a pgAdmin (Opcional)
+
+- URL: http://localhost:8081
+- Email: `admin@lexisware.com`
+- Password: `admin123`
+
+**Conectar a PostgreSQL desde pgAdmin:**
+- Host: `postgres` (nombre del contenedor)
+- Port: `5432`
+- Database: `portafolio_db`
+- Username: `postgres`
+- Password: `postgres123`
+
+### 4. Conectar desde terminal
+
+```bash
+# Entrar al contenedor
+docker exec -it portafolio-db psql -U postgres -d portafolio_db
+
+# Comandos útiles
+\l          # Listar bases de datos
+\dt         # Listar tablas
+\d users    # Descripción de tabla
+\q          # Salir
+```
+
+### 5. Detener contenedores
+
+```bash
+# Detener
+docker-compose down
+
+# Detener y eliminar datos
+docker-compose down -v
 ```
 
 ---
@@ -259,10 +399,12 @@ portafolio-backend/
 spring.application.name=portafolio-backend
 server.port=8080
 
-# Database PostgreSQL
+# ========================================
+# DATABASE - PostgreSQL en Docker
+# ========================================
 spring.datasource.url=jdbc:postgresql://localhost:5432/portafolio_db
 spring.datasource.username=postgres
-spring.datasource.password=your_password
+spring.datasource.password=postgres123
 spring.datasource.driver-class-name=org.postgresql.Driver
 
 # JPA/Hibernate
@@ -270,45 +412,65 @@ spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 
-# Firebase
+# ========================================
+# FIREBASE AUTH (Solo autenticación)
+# ========================================
 firebase.config.path=classpath:firebase-adminsdk.json
 
-# CORS
+# ========================================
+# CORS - Frontend URLs permitidas
+# ========================================
 cors.allowed-origins=http://localhost:5173,https://portafolio-two-snowy-24.vercel.app
 
-# Logging
+# ========================================
+# LOGGING
+# ========================================
 logging.level.com.lexisware=DEBUG
 logging.level.org.springframework.security=DEBUG
+logging.level.org.hibernate.SQL=DEBUG
+logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
 ```
 
 ### 3. Variables de Entorno (.env)
 
-Crear `.env` en la raíz:
+Crear `.env` en la raíz del backend:
+
 ```env
+# Database (Docker PostgreSQL)
 DB_URL=jdbc:postgresql://localhost:5432/portafolio_db
 DB_USERNAME=postgres
-DB_PASSWORD=tu_password_segura
+DB_PASSWORD=postgres123
+
+# Firebase Auth (solo para validar tokens)
 FIREBASE_CONFIG_PATH=./src/main/resources/firebase-adminsdk.json
+
+# CORS
 ALLOWED_ORIGINS=http://localhost:5173,https://portafolio-two-snowy-24.vercel.app
+
+# Server
+SERVER_PORT=8080
 ```
 
-### 4. Crear Base de Datos PostgreSQL
+### 4. application-dev.properties (Desarrollo)
 
-```sql
--- Conectarse a PostgreSQL
-psql -U postgres
+```properties
+# Development profile con Docker
+spring.datasource.url=jdbc:postgresql://localhost:5432/portafolio_db
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+```
 
--- Crear database
-CREATE DATABASE portafolio_db;
+### 5. application-prod.properties (Producción)
 
--- Verificar
-\l
-
--- Conectarse
-\c portafolio_db
-
--- Listo para que Spring cree las tablas automáticamente
+```properties
+# Production profile
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
 ```
 
 ---
