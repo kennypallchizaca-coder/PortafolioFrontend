@@ -854,3 +854,676 @@ services:
 - [ ] Probar endpoints con Postman
 - [ ] Escribir tests unitarios
 - [ ] Deploy a producción
+# 🔗 Guía de Integración Frontend-Backend
+
+## 📋 Resumen
+
+Esta guía te muestra cómo conectar tu frontend React (actual) con el nuevo backend Spring Boot + PostgreSQL + JWT.
+
+**Migración**: Firebase → PostgreSQL + Spring Boot
+
+---
+
+## 🎯 Cambios Necesarios
+
+### Frontend (React)
+- ❌ Eliminar Firebase (auth.ts, firebase.ts, firestore.ts)
+- ✅ Crear API Layer con Axios
+- ✅ Implementar autenticación JWT
+- ✅ Actualizar componentes y páginas
+
+### Backend (Spring Boot)
+- ✅ PostgreSQL como base de datos
+- ✅ Spring Security + JWT para auth
+- ✅ RESTful API endpoints
+- ✅ Sin Firebase (100% independiente)
+
+---
+
+## 📁 Paso 1: Instalar Dependencias en Frontend
+
+```bash
+cd c:\Users\kenny\OneDrive\Documents\PROYECTO-PPW-PORTAFOLIO
+
+# Instalar Axios para HTTP requests
+npm install axios
+
+# Instalar jwt-decode para leer tokens
+npm install jwt-decode
+
+# Opcional: React Query para cache
+npm install @tanstack/react-query
+```
+
+---
+
+## 🗂️ Paso 2: Crear Estructura API en Frontend
+
+### 2.1 Crear carpetas
+
+```
+src/
+├── api/                    # 🆕 Nueva carpeta
+│   ├── client.ts          # Cliente HTTP (Axios)
+│   ├── endpoints.ts       # URLs de endpoints
+│   └── services/
+│       ├── auth.service.ts
+│       ├── users.service.ts
+│       ├── projects.service.ts
+│       └── advisories.service.ts
+├── models/                 # 🆕 TypeScript types
+│   ├── User.ts
+│   ├── Project.ts
+│   ├── Advisory.ts
+│   └── Auth.ts
+└── ...
+```
+
+### 2.2 Variables de Entorno
+
+Actualizar `.env` o crear `.env.local`:
+
+```env
+# Backend API URL
+VITE_API_URL=http://localhost:8080/api
+
+# Producción (cuando deploys el backend)
+# VITE_API_URL=https://tu-backend.railway.app/api
+```
+
+---
+
+## 📦 Paso 3: Implementar API Client
+
+### `src/api/client.ts`
+
+```typescript
+import axios from 'axios'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+
+export const apiClient = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000, // 10 segundos
+})
+
+// Interceptor para agregar JWT token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
+
+// Interceptor para manejar errores
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expirado o inválido
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+```
+
+---
+
+## 🔗 Paso 4: Definir Endpoints
+
+### `src/api/endpoints.ts`
+
+```typescript
+export const ENDPOINTS = {
+  // Auth
+  AUTH: {
+    REGISTER: '/auth/register',
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
+    ME: '/auth/me',
+  },
+  
+  // Users
+  USERS: {
+    LIST: '/users',
+    PROGRAMMERS: '/users/programmers',
+    GET_BY_ID: (id: string) => `/users/${id}`,
+    UPDATE: (id: string) => `/users/${id}`,
+    UPDATE_PROFILE: '/users/me',
+  },
+  
+  // Projects
+  PROJECTS: {
+    LIST: '/projects',
+    CREATE: '/projects',
+    GET_BY_ID: (id: number) => `/projects/${id}`,
+    GET_BY_OWNER: (ownerId: string) => `/projects/owner/${ownerId}`,
+    UPDATE: (id: number) => `/projects/${id}`,
+    DELETE: (id: number) => `/projects/${id}`,
+  },
+  
+  // Advisories
+  ADVISORIES: {
+    LIST: '/advisories',
+    CREATE: '/advisories',
+    GET_BY_PROGRAMMER: (programmerId: string) => `/advisories/programmer/${programmerId}`,
+    GET_BY_EMAIL: (email: string) => `/advisories/requester/${email}`,
+    UPDATE_STATUS: (id: number) => `/advisories/${id}/status`,
+  },
+}
+```
+
+---
+
+## 🔐 Paso 5: Servicio de Autenticación
+
+### `src/api/services/auth.service.ts`
+
+```typescript
+import { apiClient } from '../client'
+import { ENDPOINTS } from '../endpoints'
+import type { LoginRequest, RegisterRequest, AuthResponse, User } from '../../models/Auth'
+
+export const authService = {
+  /**
+   * Registrar nuevo usuario
+   */
+  register: async (data: RegisterRequest): Promise<AuthResponse> => {
+    const response = await apiClient.post(ENDPOINTS.AUTH.REGISTER, data)
+    
+    // Guardar token y usuario
+    if (response.data.token) {
+      localStorage.setItem('auth_token', response.data.token)
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+    }
+    
+    return response.data
+  },
+
+  /**
+   * Login
+   */
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    const response = await apiClient.post(ENDPOINTS.AUTH.LOGIN, {
+      email,
+      password,
+    })
+    
+    // Guardar token y usuario
+    if (response.data.token) {
+      localStorage.setItem('auth_token', response.data.token)
+      localStorage.setItem('user', JSON.stringify(response.data.user))
+    }
+    
+    return response.data
+  },
+
+  /**
+   * Logout
+   */
+  logout: async (): Promise<void> => {
+    try {
+      await apiClient.post(ENDPOINTS.AUTH.LOGOUT)
+    } finally {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user')
+    }
+  },
+
+  /**
+   * Obtener usuario actual
+   */
+  getCurrentUser: async (): Promise<User> => {
+    const response = await apiClient.get(ENDPOINTS.AUTH.ME)
+    
+    // Actualizar usuario en localStorage
+    localStorage.setItem('user', JSON.stringify(response.data))
+    
+    return response.data
+  },
+
+  /**
+   * Verificar si está autenticado
+   */
+  isAuthenticated: (): boolean => {
+    return !!localStorage.getItem('auth_token')
+  },
+
+  /**
+   * Obtener token
+   */
+  getToken: (): string | null => {
+    return localStorage.getItem('auth_token')
+  },
+
+  /**
+   * Obtener usuario de localStorage
+   */
+  getUser: (): User | null => {
+    const userStr = localStorage.getItem('user')
+    return userStr ? JSON.parse(userStr) : null
+  },
+}
+```
+
+---
+
+## 📦 Paso 6: Modelos TypeScript
+
+### `src/models/Auth.ts`
+
+```typescript
+export interface User {
+  uid: string
+  email: string
+  displayName: string
+  role: 'PROGRAMMER' | 'ADMIN' | 'EXTERNAL'
+  specialty?: string
+  bio?: string
+  photoURL?: string
+  available?: boolean
+  skills?: string[]
+  schedule?: string[]
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface RegisterRequest {
+  email: string
+  password: string
+  displayName: string
+  role: 'PROGRAMMER' | 'EXTERNAL'
+}
+
+export interface AuthResponse {
+  token: string
+  user: User
+}
+```
+
+### `src/models/Project.ts`
+
+```typescript
+export interface Project {
+  id: number
+  ownerId: string
+  title: string
+  description: string
+  category: 'academico' | 'laboral'
+  role: 'frontend' | 'backend' | 'fullstack' | 'db'
+  techStack: string[]
+  repoUrl?: string
+  demoUrl?: string
+  imageUrl?: string
+  programmerName?: string
+  createdAt: string
+}
+```
+
+---
+
+## 👥 Paso 7: Servicio de Usuarios
+
+### `src/api/services/users.service.ts`
+
+```typescript
+import { apiClient } from '../client'
+import { ENDPOINTS } from '../endpoints'
+import type { User } from '../../models/Auth'
+
+export const usersService = {
+  getAll: async (): Promise<User[]> => {
+    const { data } = await apiClient.get(ENDPOINTS.USERS.LIST)
+    return data
+  },
+
+  getProgrammers: async (): Promise<User[]> => {
+    const { data } = await apiClient.get(ENDPOINTS.USERS.PROGRAMMERS)
+    return data
+  },
+
+  getById: async (id: string): Promise<User> => {
+    const { data } = await apiClient.get(ENDPOINTS.USERS.GET_BY_ID(id))
+    return data
+  },
+
+  updateProfile: async (userData: Partial<User>): Promise<User> => {
+    const { data } = await apiClient.put(ENDPOINTS.USERS.UPDATE_PROFILE, userData)
+    
+    // Actualizar localStorage
+    localStorage.setItem('user', JSON.stringify(data))
+    
+    return data
+  },
+}
+```
+
+---
+
+## 📝 Paso 8: Servicio de Proyectos
+
+### `src/api/services/projects.service.ts`
+
+```typescript
+import { apiClient } from '../client'
+import { ENDPOINTS } from '../endpoints'
+import type { Project } from '../../models/Project'
+
+export const projectsService = {
+  getAll: async (): Promise<Project[]> => {
+    const { data } = await apiClient.get(ENDPOINTS.PROJECTS.LIST)
+    return data
+  },
+
+  getByOwner: async (ownerId: string): Promise<Project[]> => {
+    const { data } = await apiClient.get(ENDPOINTS.PROJECTS.GET_BY_OWNER(ownerId))
+    return data
+  },
+
+  create: async (project: Omit<Project, 'id' | 'createdAt'>): Promise<Project> => {
+    const { data } = await apiClient.post(ENDPOINTS.PROJECTS.CREATE, project)
+    return data
+  },
+
+  update: async (id: number, project: Partial<Project>): Promise<Project> => {
+    const { data } = await apiClient.put(ENDPOINTS.PROJECTS.UPDATE(id), project)
+    return data
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(ENDPOINTS.PROJECTS.DELETE(id))
+  },
+}
+```
+
+---
+
+## 🔄 Paso 9: Actualizar AuthContext
+
+### `src/context/AuthContext.tsx` (NUEVO)
+
+```typescript
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { authService } from '../api/services/auth.service'
+import type { User, LoginRequest, RegisterRequest } from '../models/Auth'
+
+interface AuthContextType {
+  user: User | null
+  loading: boolean
+  login: (email: string, password: string) => Promise<void>
+  register: (data: RegisterRequest) => Promise<void>
+  logout: () => Promise<void>
+  updateUser: (user: User) => void
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Cargar usuario al iniciar
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (authService.isAuthenticated()) {
+          const currentUser = await authService.getCurrentUser()
+          setUser(currentUser)
+        }
+      } catch (error) {
+        console.error('Error loading user:', error)
+        authService.logout()
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    initAuth()
+  }, [])
+
+  const login = async (email: string, password: string) => {
+    const response = await authService.login(email, password)
+    setUser(response.user)
+  }
+
+  const register = async (data: RegisterRequest) => {
+    const response = await authService.register(data)
+    setUser(response.user)
+  }
+
+  const logout = async () => {
+    await authService.logout()
+    setUser(null)
+  }
+
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser)
+    localStorage.setItem('user', JSON.stringify(updatedUser))
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider')
+  }
+  return context
+}
+```
+
+---
+
+## 🎨 Paso 10: Actualizar Páginas
+
+### Ejemplo: Login Page
+
+**ANTES** (Firebase):
+```typescript
+// ❌ Código viejo
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '../../services/firebase'
+
+const handleSubmit = async (e: FormEvent) => {
+  e.preventDefault()
+  await signInWithEmailAndPassword(auth, email, password)
+}
+```
+
+**DESPUÉS** (Spring Boot + JWT):
+```typescript
+// ✅ Código nuevo
+import { useAuth } from '../../context/AuthContext'
+
+const { login } = useAuth()
+
+const handleSubmit = async (e: FormEvent) => {
+  e.preventDefault()
+  try {
+    await login(email, password)
+    navigate('/dashboard')
+  } catch (error) {
+    setError('Credenciales inválidas')
+  }
+}
+```
+
+---
+
+## 📊 Paso 11: Endpoints del Backend
+
+### Endpoints que el backend debe implementar:
+
+```
+POST   /api/auth/register          # Registro
+POST   /api/auth/login             # Login
+POST   /api/auth/logout            # Logout (opcional)
+GET    /api/auth/me                # Usuario actual
+
+GET    /api/users                  # Todos los usuarios
+GET    /api/users/programmers      # Solo programadores
+GET    /api/users/:id              # Usuario específico
+PUT    /api/users/me               # Actualizar perfil
+
+GET    /api/projects               # Todos los proyectos
+POST   /api/projects               # Crear proyecto
+GET    /api/projects/:id           # Proyecto específico
+GET    /api/projects/owner/:id     # Proyectos de un owner
+PUT    /api/projects/:id           # Actualizar proyecto
+DELETE /api/projects/:id           # Eliminar proyecto
+
+GET    /api/advisories             # Todas las asesorías
+POST   /api/advisories             # Crear asesoría
+GET    /api/advisories/programmer/:id   # Asesorías de un programador
+GET    /api/advisories/requester/:email # Asesorías de un solicitante
+PATCH  /api/advisories/:id/status       # Actualizar estado
+```
+
+---
+
+## 🧪 Paso 12: Testing
+
+### Test local:
+
+1. **Iniciar Backend**:
+```bash
+cd portafolio-backend
+mvn spring-boot:run
+```
+
+2. **Verificar que corre**:
+```bash
+curl http://localhost:8080/api/health
+# Debe responder: {"status":"UP"}
+```
+
+3. **Iniciar Frontend**:
+```bash
+cd PROYECTO-PPW-PORTAFOLIO
+npm run dev
+```
+
+4. **Probar registro**:
+- Ir a `/register`
+- Crear cuenta
+- Verificar que guarda en PostgreSQL
+
+---
+
+## 📋 Checklist de Migración
+
+### Backend
+- [ ] PostgreSQL corriendo en Docker
+- [ ] Spring Boot iniciado
+- [ ] Todos los endpoints funcionando
+- [ ] CORS configurado para frontend
+- [ ] JWT generation funcionando
+
+### Frontend
+- [ ] Axios instalado
+- [ ] API layer creada (`src/api/`)
+- [ ] Modelos TypeScript definidos
+- [ ] AuthContext actualizado
+- [ ] Variables de entorno configuradas
+- [ ] Login/Register usando nuevo API
+- [ ] Todas las páginas migradas
+
+### Testing
+- [ ] Registro funciona
+- [ ] Login funciona
+- [ ] Token se guarda correctamente
+- [ ] Requests autenticados funcionan
+- [ ] Logout funciona
+
+---
+
+## 🚀 Deployment
+
+### Backend (Railway/Render)
+1. Deploy backend primero
+2. Obtener URL: `https://tu-backend.railway.app`
+3. Configurar PostgreSQL en producción
+
+### Frontend (Vercel)
+1. Actualizar `.env.production`:
+   ```env
+   VITE_API_URL=https://tu-backend.railway.app/api
+   ```
+2. Build y deploy
+3. Verificar conexión
+
+---
+
+## ⚠️ Archivos a ELIMINAR del Frontend
+
+Una vez migrado completamente:
+
+```bash
+# Eliminar servicios de Firebase
+rm src/services/firebase.ts
+rm src/services/firestore.ts
+rm src/services/auth.ts (viejo)
+
+# Desinstalar Firebase
+npm uninstall firebase
+
+# Actualizar .gitignore (eliminar referencias a Firebase)
+```
+
+---
+
+## 💡 Tips Importantes
+
+1. **CORS**: El backend debe permitir el origen del frontend
+2. **JWT Expiration**: Manejar tokens expirados
+3. **Error Handling**: Centralizar manejo de errores HTTP
+4. **Loading States**: Mostrar estados de carga
+5. **Optimistic Updates**: Para mejor UX
+
+---
+
+## 🆘 Troubleshooting
+
+### Error: "Network Error"
+- Verificar que backend esté corriendo
+- Revisar URL en `.env`
+- Verificar CORS en backend
+
+### Error: "401 Unauthorized"
+- Token expirado o inválido
+- Revisar header `Authorization`
+- Verificar que token esté en localStorage
+
+### Error: "Cannot connect to database"
+- PostgreSQL en Docker no está corriendo
+- `docker-compose up -d`
+
+---
+
+## 📚 Recursos Adicionales
+
+- [Axios Docs](https://axios-http.com/)
+- [Spring Security JWT](https://spring.io/guides/tutorials/spring-boot-oauth2/)
+- [React Query](https://tanstack.com/query) (opcional, para cache)
