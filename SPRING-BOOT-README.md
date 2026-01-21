@@ -1,7 +1,8 @@
 # 🚀 Backend Spring Boot - LEXISWARE Portafolio
 
-> ⚠️ **IMPORTANTE**: Este backend usa **PostgreSQL** como base de datos principal (en Docker).  
-> Firebase solo se usa para **autenticación** (Firebase Auth), NO para almacenar datos.
+> ⚠️ **ARQUITECTURA 100% POSTGRESQL**  
+> Este backend usa **PostgreSQL** para TODO: base de datos + autenticación.  
+> **NO usa Firebase**. Autenticación con **Spring Security + JWT**.
 
 ## 📋 Tabla de Contenidos
 1. [Prerrequisitos](#prerrequisitos)
@@ -43,31 +44,56 @@ docker-compose --version
 ## 🏗️ Arquitectura del Sistema
 
 ```
-┌─────────────┐      HTTP/REST      ┌──────────────────┐
-│   Frontend  │ ─────────────────> │  Spring Boot API │
-│  (React +   │ <───────────────── │   (Port 8080)    │
-│   Vite)     │   Firebase Token   │                  │
-└─────────────┘                     └─────────┬────────┘
-                                              │
-                     ┌────────────────────────┼────────────────┐
-                     │                        │                │
-                     ▼                        ▼                ▼
-            ┌─────────────────┐    ┌──────────────┐   ┌──────────────┐
-            │  Firebase Auth  │    │  PostgreSQL  │   │  EmailJS API │
-            │ (Autenticación) │    │  (Database)  │   │   (Emails)   │
-            └─────────────────┘    │  in Docker   │   └──────────────┘
-                                   │  Port 5432   │
-                                   └──────────────┘
+┌─────────────┐      HTTP/REST       ┌──────────────────┐
+│   Frontend  │ ──────────────────> │  Spring Boot API │
+│  (React +   │ <──────────────────  │   (Port 8080)    │
+│   Vite)     │    JWT Token         │                  │
+└─────────────┘                      └─────────┬────────┘
+                                               │
+                      ┌────────────────────────┼──────────┐
+                      │                        │          │
+                      ▼                        ▼          ▼
+             ┌────────────────┐     ┌──────────────┐  ┌─────────┐
+             │   PostgreSQL   │     │ EmailJS API  │  │  Cloud  │
+             │   (Database)   │     │   (Emails)   │  │ Storage │
+             │   in Docker    │     └──────────────┘  │(Imágenes│
+             │   Port 5432    │                       └─────────┘
+             │                │
+             │ - users        │
+             │ - projects     │
+             │ - advisories   │
+             │ - auth tokens  │
+             └────────────────┘
 ```
 
 ### Stack Tecnológico
 - **Frontend**: React + TypeScript + Vite
 - **Backend**: Spring Boot 3.2 + Java 17
 - **Base de Datos**: PostgreSQL 15 (Docker)
-- **Autenticación**: Firebase Auth (solo tokens JWT)
+- **Autenticación**: Spring Security + JWT (100% PostgreSQL)
+- **Password Hashing**: BCrypt
 - **ORM**: Spring Data JPA + Hibernate
 - **API**: RESTful con JSON
 - **Deployment**: Railway / Render / Docker
+
+### 🔐 Flujo de Autenticación
+
+1. **Registro**: `POST /api/auth/register`
+   - Usuario envía email + password
+   - Backend hashea password con BCrypt
+   - Guarda en PostgreSQL
+   - **NO usa Firebase**
+
+2. **Login**: `POST /api/auth/login`
+   - Usuario envía credenciales
+   - Backend valida contra PostgreSQL
+   - Genera JWT token
+   - Frontend guarda token en localStorage
+
+3. **Requests autenticados**:
+   - Frontend envía `Authorization: Bearer {token}`
+   - Spring Security valida JWT
+   - Permite/rechaza acceso
 
 ---
 
@@ -202,87 +228,6 @@ docker-compose down -v
 
 4. **Generar** y descargar el ZIP
 
-### Opción 2: Comando Maven
-```bash
-mvn archetype:generate \
-  -DgroupId=com.lexisware \
-  -DartifactId=portafolio-backend \
-  -DarchetypeArtifactId=maven-archetype-quickstart \
-  -DinteractiveMode=false
-```
-
-### Extraer y Abrir
-```bash
-unzip portafolio-backend.zip
-cd portafolio-backend
-code .  # O abrir con tu IDE
-```
-
----
-
-## 📁 Estructura del Proyecto
-
-```
-portafolio-backend/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/
-│   │   │       └── lexisware/
-│   │   │           └── portafolio/
-│   │   │               ├── PortafolioBackendApplication.java
-│   │   │               ├── config/
-│   │   │               │   ├── SecurityConfig.java
-│   │   │               │   ├── CorsConfig.java
-│   │   │               │   └── FirebaseConfig.java
-│   │   │               ├── controller/
-│   │   │               │   ├── UserController.java
-│   │   │               │   ├── ProjectController.java
-│   │   │               │   ├── AdvisoryController.java
-│   │   │               │   └── PortfolioController.java
-│   │   │               ├── dto/
-│   │   │               │   ├── request/
-│   │   │               │   │   ├── CreateProjectRequest.java
-│   │   │               │   │   └── AdvisoryRequestDto.java
-│   │   │               │   └── response/
-│   │   │               │       ├── ProjectResponse.java
-│   │   │               │       └── UserResponse.java
-│   │   │               ├── entity/
-│   │   │               │   ├── User.java
-│   │   │               │   ├── Project.java
-│   │   │               │   ├── Advisory.java
-│   │   │               │   └── Portfolio.java
-│   │   │               ├── exception/
-│   │   │               │   ├── GlobalExceptionHandler.java
-│   │   │               │   ├── ResourceNotFoundException.java
-│   │   │               │   └── UnauthorizedException.java
-│   │   │               ├── repository/
-│   │   │               │   ├── UserRepository.java
-│   │   │               │   ├── ProjectRepository.java
-│   │   │               │   ├── AdvisoryRepository.java
-│   │   │               │   └── PortfolioRepository.java
-│   │   │               ├── security/
-│   │   │               │   ├── FirebaseAuthenticationFilter.java
-│   │   │               │   └── FirebaseTokenValidator.java
-│   │   │               └── service/
-│   │   │                   ├── UserService.java
-│   │   │                   ├── ProjectService.java
-│   │   │                   ├── AdvisoryService.java
-│   │   │                   └── PortfolioService.java
-│   │   └── resources/
-│   │       ├── application.properties
-│   │       ├── application-dev.properties
-│   │       ├── application-prod.properties
-│   │       └── firebase-adminsdk.json (NO subir a Git)
-│   └── test/
-│       └── java/
-│           └── com/lexisware/portafolio/
-│               └── (tests aquí)
-├── .gitignore
-├── pom.xml
-└── README.md
-```
-
 ---
 
 ## ⚙️ Configuración
@@ -307,10 +252,11 @@ portafolio-backend/
     <artifactId>portafolio-backend</artifactId>
     <version>1.0.0</version>
     <name>portafolio-backend</name>
-    <description>Backend API para LEXISWARE Portafolio</description>
+    <description>Backend API para LEXISWARE Portafolio - PostgreSQL + JWT Auth</description>
     
     <properties>
         <java.version>17</java.version>
+        <jjwt.version>0.12.3</jjwt.version>
     </properties>
     
     <dependencies>
@@ -339,17 +285,29 @@ portafolio-backend/
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         
+        <!-- JWT - JSON Web Token -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        
         <!-- Validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
-        </dependency>
-        
-        <!-- Firebase Admin SDK -->
-        <dependency>
-            <groupId>com.google.firebase</groupId>
-            <artifactId>firebase-admin</artifactId>
-            <version>9.2.0</version>
         </dependency>
         
         <!-- Lombok -->
