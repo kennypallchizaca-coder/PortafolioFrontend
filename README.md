@@ -3,7 +3,7 @@
 ![alt text](imagenes/image0.png)
 
 ## 2. Integrantes
-- **Alex Guaaman** – [https://github.com/kennypallchizaca-coder](https://github.com/kennypallchizaca-coder)
+- **Alex Guaman** – [https://github.com/kennypallchizaca-coder](https://github.com/kennypallchizaca-coder)
 - **Daniel Guanga** – [https://github.com/Pangust-code](https://github.com/Pangust-code)
 - **Repositorio principal:** [LEXISWARE - Portafolio Profesional](https://github.com/kennypallchizaca-coder/PORTAFOLIO)
 
