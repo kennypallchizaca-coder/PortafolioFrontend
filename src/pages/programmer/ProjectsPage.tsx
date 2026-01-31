@@ -4,30 +4,32 @@
  */
 import { useEffect, useState, useCallback, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { addProject, listProjectsByOwner, updateProject } from '../../services/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { storage } from '../../services/firebase'
-import type { DocumentData } from 'firebase/firestore'
+import {
+  getProjectsByOwner,
+  createProject,
+  updateProject,
+  type Project,
+} from '../../services/projects'
+import { uploadProjectImage } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
 import FormInput from '../../components/FormInput'
 import FormTextarea from '../../components/FormTextarea'
-import { FiPlus, FiX, FiImage, FiGithub } from 'react-icons/fi'
+import { FiImage } from 'react-icons/fi'
 
 const emptyProject = {
   title: '',
   description: '',
-  category: 'academico',
-  role: 'frontend',
+  category: 'academico' as 'academico' | 'laboral',
+  role: 'frontend' as 'frontend' | 'backend' | 'fullstack' | 'db',
   techStack: '',
   repoUrl: '',
   demoUrl: '',
   imageUrl: '',
-  programmerName: '',
 }
 
 const ProjectsPage = () => {
   const { user } = useAuth()
-  const [projects, setProjects] = useState<(DocumentData & { id: string })[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [form, setForm] = useState(emptyProject)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -35,8 +37,6 @@ const ProjectsPage = () => {
   const [error, setError] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
-  const [technologies, setTechnologies] = useState<string[]>(['React'])
-  const [newTech, setNewTech] = useState('')
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
 
@@ -57,22 +57,24 @@ const ProjectsPage = () => {
   }
 
   const loadProjects = useCallback(async () => {
-    if (!user?.uid) return
+    if (!user?.id) return
     try {
-      const data = await listProjectsByOwner(user.uid)
+      const data = await getProjectsByOwner(user.id)
       setProjects(data)
     } catch (error) {
       console.error('Error al cargar proyectos:', error)
       setError('No se pudieron cargar los proyectos.')
       setProjects([])
     }
-  }, [user?.uid])
+  }, [user?.id])
 
   useEffect(() => {
     loadProjects()
   }, [loadProjects])
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
 
@@ -81,18 +83,21 @@ const ProjectsPage = () => {
       const fieldRules = validationRules[name as keyof typeof validationRules]
       if (fieldRules) {
         const error = FormUtils.validate(value, fieldRules)
-        setFormErrors(prev => ({ ...prev, [name]: error || '' }))
+        setFormErrors((prev) => ({ ...prev, [name]: error || '' }))
       }
     }
   }
 
   const handleBlur = (fieldName: string) => {
-    setTouched(prev => ({ ...prev, [fieldName]: true }))
+    setTouched((prev) => ({ ...prev, [fieldName]: true }))
 
     const fieldRules = validationRules[fieldName as keyof typeof validationRules]
     if (fieldRules) {
-      const error = FormUtils.validate(form[fieldName as keyof typeof form], fieldRules)
-      setFormErrors(prev => ({ ...prev, [fieldName]: error || '' }))
+      const error = FormUtils.validate(
+        form[fieldName as keyof typeof form],
+        fieldRules
+      )
+      setFormErrors((prev) => ({ ...prev, [fieldName]: error || '' }))
     }
   }
 
@@ -108,31 +113,12 @@ const ProjectsPage = () => {
     }
   }
 
-  const uploadImage = async (file: File): Promise<string> => {
-    try {
-      const timestamp = Date.now()
-      const storageRef = ref(storage, `projects/${timestamp}_${file.name}`)
-      const snapshot = await uploadBytes(storageRef, file)
-      const url = await getDownloadURL(storageRef)
-      return url
-    } catch (error: any) {
-      console.error('❌ Error al subir imagen:', error)
-      console.error('Código de error:', error.code)
-      console.error('Mensaje:', error.message)
-
-      if (error.code === 'storage/unauthorized') {
-        throw new Error('⚠️ REGLAS DE STORAGE NO APLICADAS. Ve a Firebase Console > Storage > Rules.')
-      }
-      throw error
-    }
-  }
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     setMessage('')
     setError('')
-    if (!user?.uid) return
+    if (!user?.id) return
 
     // Marcar todos como tocados
     const allTouched = Object.keys(validationRules).reduce((acc, key) => {
@@ -145,62 +131,57 @@ const ProjectsPage = () => {
     const errors = FormUtils.validateForm(form, validationRules)
     setFormErrors(errors)
 
-    // Validar al menos 1 tecnología
-    if (technologies.length < 1) {
-      errors['technologies'] = 'Debe tener al menos 1 tecnología'
-    }
-
     if (FormUtils.hasErrors(errors)) {
       setError('Por favor corrige los errores en el formulario.')
       setLoading(false)
       return
     }
-    try {
-      if (!user?.uid) throw new Error('Usuario no autenticado')
 
-      const payload = {
-        ownerId: user.uid,
-        title: form.title,
-        description: form.description,
-        category: form.category as 'academico' | 'laboral',
-        role: form.role as 'frontend' | 'backend' | 'fullstack' | 'db',
-        techStack: form.techStack.split(',').map((t) => t.trim()).filter(Boolean),
-        repoUrl: form.repoUrl,
-        demoUrl: form.demoUrl,
-        imageUrl: '',
-        programmerName: form.programmerName,
+    try {
+      if (!user?.id) throw new Error('Usuario no autenticado')
+
+      let imageUrl = form.imageUrl
+
+      // Subir imagen si hay una seleccionada
+      if (imageFile) {
+        const uploadResult = await uploadProjectImage(
+          imageFile,
+          editingId || 'temp'
+        )
+        imageUrl = uploadResult.url
       }
 
-      let projectId = editingId
+      const payload = {
+        ownerId: user.id,
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        role: form.role,
+        techStack: form.techStack
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+        repoUrl: form.repoUrl || undefined,
+        demoUrl: form.demoUrl || undefined,
+        imageUrl,
+      }
 
       if (editingId) {
         // Actualizar proyecto existente
         await updateProject(editingId, payload)
         setMessage('Proyecto actualizado.')
       } else {
-        // Crear nuevo proyecto y obtener su ID
-        const docRef = await addProject(user.uid, payload)
-        projectId = docRef.id
+        // Crear nuevo proyecto
+        await createProject(payload)
         setMessage('Proyecto creado.')
-      }
-
-      // Guardar imagen en localStorage DESPUÉS de tener el ID real
-      if (imageFile && projectId) {
-        const reader = new FileReader()
-        await new Promise<void>((resolve) => {
-          reader.onloadend = () => {
-            const base64 = reader.result as string
-            localStorage.setItem(`project_img_${projectId}`, base64)
-            resolve()
-          }
-          reader.readAsDataURL(imageFile)
-        })
       }
 
       setForm(emptyProject)
       setEditingId(null)
       setImageFile(null)
       setImagePreview('')
+      setFormErrors({})
+      setTouched({})
       await loadProjects()
     } catch (err) {
       console.error('Error al guardar proyecto:', err)
@@ -210,18 +191,17 @@ const ProjectsPage = () => {
     }
   }
 
-  const startEdit = (p: DocumentData & { id: string }) => {
-    setEditingId(p.id)
+  const startEdit = (p: Project) => {
+    setEditingId(p.id!)
     setForm({
       title: p.title,
-      description: p.description,
+      description: p.description || '',
       category: p.category,
       role: p.role,
       techStack: p.techStack?.join(', ') || '',
       repoUrl: p.repoUrl || '',
       demoUrl: p.demoUrl || '',
       imageUrl: p.imageUrl || '',
-      programmerName: p.programmerName || '',
     })
     setImagePreview(p.imageUrl || '')
   }
@@ -243,6 +223,10 @@ const ProjectsPage = () => {
                   onClick={() => {
                     setEditingId(null)
                     setForm(emptyProject)
+                    setImagePreview('')
+                    setImageFile(null)
+                    setFormErrors({})
+                    setTouched({})
                   }}
                 >
                   Cancelar
@@ -278,18 +262,7 @@ const ProjectsPage = () => {
               minLength={10}
               maxLength={500}
             />
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Nombre del programador</span>
-              </label>
-              <input
-                name="programmerName"
-                value={form.programmerName}
-                onChange={handleChange}
-                className="input input-bordered"
-                placeholder="Tu nombre"
-              />
-            </div>
+
             <div className="grid gap-3 md:grid-cols-2">
               <div className="form-control">
                 <label className="label">
@@ -322,16 +295,17 @@ const ProjectsPage = () => {
                 </select>
               </div>
             </div>
+
             <div className="form-control">
               <label className="label">
-                <span className="label-text">Tecnologías (coma)</span>
+                <span className="label-text">Tecnologías (separadas por coma)</span>
               </label>
               <input
                 name="techStack"
                 value={form.techStack}
                 onChange={handleChange}
                 className="input input-bordered"
-                placeholder="React, Firebase, Tailwind"
+                placeholder="React, Node.js, MongoDB"
               />
             </div>
 

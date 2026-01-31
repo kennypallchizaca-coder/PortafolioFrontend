@@ -55,7 +55,7 @@ const Footer = () => {
                 </Link>
               </li>
               {/* Solo visible para no autenticados o externos, oculto para programmers/admins */}
-              {(!isAuthenticated || role === 'external') && (
+              {(!isAuthenticated || ['role_external', 'external', 'role_user', 'user'].includes((role as string)?.toLowerCase() || '')) && (
                 <li>
                   <Link
                     to="/agendar-asesoria"
@@ -75,7 +75,6 @@ const Footer = () => {
             <div className="flex flex-wrap gap-2">
               <span className="badge badge-outline">React</span>
               <span className="badge badge-outline">TypeScript</span>
-              <span className="badge badge-outline">Firebase</span>
               <span className="badge badge-outline">Tailwind</span>
               <span className="badge badge-outline">DaisyUI</span>
             </div>

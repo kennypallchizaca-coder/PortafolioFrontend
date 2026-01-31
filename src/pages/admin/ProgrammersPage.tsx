@@ -1,23 +1,18 @@
 /**
  * Gestión de programadores (Admin).
- * Prácticas: Formularios controlados con validación completa y arrays dinámicos, consumo Firestore, feedback DaisyUI.
+ * Prácticas: Formularios controlados con validación completa y arrays dinámicos, REST API.
  */
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
-import { listProgrammers, upsertProgrammer, deleteProgrammer } from '../../services/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { storage } from '../../services/firebase'
-import type { DocumentData } from 'firebase/firestore'
+import { getProgrammers, upsertProgrammer, deleteProgrammer, type ProgrammerProfile } from '../../services/programmers'
+import { uploadAvatar } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
 import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi'
 
-// Datos base para el formulario de alta/edición
 const initialForm = {
   displayName: '',
   email: '',
   specialty: '',
   bio: '',
-  role: 'programmer',
-  photoURL: '',
   github: '',
   instagram: '',
   whatsapp: '',
@@ -26,7 +21,7 @@ const initialForm = {
 
 const ProgrammersPage = () => {
   const [form, setForm] = useState(initialForm)
-  const [programmers, setProgrammers] = useState<(DocumentData & { id: string })[]>([])
+  const [programmers, setProgrammers] = useState<ProgrammerProfile[]>([])
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -36,15 +31,11 @@ const ProgrammersPage = () => {
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  // Arrays dinámicos para habilidades
   const [skills, setSkills] = useState<string[]>(['JavaScript', 'React'])
   const [newSkill, setNewSkill] = useState('')
-
-  // Arrays dinámicos para horarios
   const [times, setTimes] = useState<string[]>(['09:00', '11:00'])
   const [newTime, setNewTime] = useState('')
 
-  // Reglas de validación
   const validationRules = {
     displayName: [
       (val: string) => FormUtils.required(val),
@@ -73,21 +64,24 @@ const ProgrammersPage = () => {
   }
 
   const loadProgrammers = async () => {
-    const data = await listProgrammers()
-    setProgrammers(data)
+    try {
+      const data = await getProgrammers()
+      setProgrammers(data)
+    } catch (err) {
+      console.error('Error loading programmers:', err)
+    }
   }
+
   useEffect(() => {
     loadProgrammers()
   }, [])
 
-  // Agregar habilidad dinámicamente
   const onAddSkill = () => {
     if (!newSkill.trim() || newSkill.length < 2) return
     setSkills([...skills, newSkill.trim()])
     setNewSkill('')
   }
 
-  // Eliminar habilidad
   const onDeleteSkill = (index: number) => {
     setSkills(skills.filter((_, i) => i !== index))
   }
@@ -96,30 +90,21 @@ const ProgrammersPage = () => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
 
-    // Validar el campo en tiempo real si ya fue tocado
     if (touched[name]) {
       const fieldRules = validationRules[name as keyof typeof validationRules]
       if (fieldRules) {
         const error = FormUtils.validate(value, fieldRules)
-        setFormErrors(prev => ({
-          ...prev,
-          [name]: error || ''
-        }))
+        setFormErrors(prev => ({ ...prev, [name]: error || '' }))
       }
     }
   }
 
   const handleBlur = (fieldName: string) => {
     setTouched(prev => ({ ...prev, [fieldName]: true }))
-
-    // Validar al perder el foco
     const fieldRules = validationRules[fieldName as keyof typeof validationRules]
     if (fieldRules) {
       const error = FormUtils.validate(form[fieldName as keyof typeof form], fieldRules)
-      setFormErrors(prev => ({
-        ...prev,
-        [fieldName]: error || ''
-      }))
+      setFormErrors(prev => ({ ...prev, [fieldName]: error || '' }))
     }
   }
 
@@ -135,49 +120,26 @@ const ProgrammersPage = () => {
     }
   }
 
-  const uploadPhoto = async (file: File, userId: string): Promise<string> => {
-    try {
-      const storageRef = ref(storage, `programmers/${userId}/profile.jpg`)
-      const snapshot = await uploadBytes(storageRef, file)
-      const url = await getDownloadURL(storageRef)
-      return url
-    } catch (error: any) {
-      console.error('❌ Error al subir foto:', error)
-      console.error('Código de error:', error.code)
-      console.error('Mensaje:', error.message)
-
-      if (error.code === 'storage/unauthorized') {
-        throw new Error('⚠️ REGLAS DE STORAGE NO APLICADAS. Ve a Firebase Console > Storage > Rules y aplica las reglas.')
-      }
-      throw new Error(`No se pudo subir la foto: ${error.message}`)
-    }
-  }
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    // Marcar todos los campos como tocados
     const allTouched = Object.keys(validationRules).reduce((acc, key) => {
       acc[key] = true
       return acc
     }, {} as { [key: string]: boolean })
     setTouched(allTouched)
 
-    // Validar todo el formulario
     const errors = FormUtils.validateForm(form, validationRules)
     setFormErrors(errors)
 
-    // Validar arrays dinámicos
     if (skills.length < 2) {
       errors['skills'] = 'Debe tener al menos 2 habilidades'
     }
 
-    // Validar horario si está disponible
     if (form.available && times.length === 0) {
       errors['schedule'] = 'Debe especificar al menos un horario si está disponible'
     }
 
-    // Si hay errores, no enviar
     if (FormUtils.hasErrors(errors)) {
       setError('Por favor corrige los errores en el formulario.')
       return
@@ -188,25 +150,14 @@ const ProgrammersPage = () => {
     setMessage('')
 
     try {
-      // Generar UID automático si es nuevo, o usar el existente si es edición
-      const uid = editingId || `prog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const uid = editingId || `prog_${Date.now()}`
+      let photoURL = ''
 
-      let photoURL = form.photoURL
-
-      // Guardar foto en localStorage
       if (photoFile) {
-        const reader = new FileReader()
-        photoURL = await new Promise<string>((resolve) => {
-          reader.onloadend = () => {
-            const base64 = reader.result as string
-            localStorage.setItem(`photo_${uid}`, base64)
-            resolve(base64)
-          }
-          reader.readAsDataURL(photoFile)
-        })
+        const uploadResult = await uploadAvatar(photoFile, uid)
+        photoURL = uploadResult.url
       }
 
-      // Construir objeto socials solo con valores que existan
       const socials: Record<string, string> = {}
       if (form.github) socials.github = form.github
       if (form.instagram) socials.instagram = form.instagram
@@ -217,13 +168,14 @@ const ProgrammersPage = () => {
         email: form.email,
         specialty: form.specialty,
         bio: form.bio,
-        role: 'programmer',
-        photoURL: '', // No guardamos URL en Firestore
+        role: 'ROLE_PROGRAMMER',
+        photoURL,
         skills: skills,
         socials,
         available: form.available,
         schedule: times,
       })
+
       setMessage(editingId ? '✓ Programador actualizado correctamente.' : '✓ Programador guardado correctamente.')
       setForm(initialForm)
       setSkills(['JavaScript', 'React'])
@@ -238,21 +190,19 @@ const ProgrammersPage = () => {
       await loadProgrammers()
     } catch (err: any) {
       console.error('Error al guardar programador:', err)
-      setError(`Error al guardar: ${err.message || 'Verifica permisos de Firebase'}`)
+      setError(`Error al guardar: ${err.message || 'Error al conectar con el servidor'}`)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleEdit = (dev: DocumentData & { id: string }) => {
-    setEditingId(dev.id)
+  const handleEdit = (dev: ProgrammerProfile) => {
+    setEditingId(dev.id!)
     setForm({
       displayName: dev.displayName || '',
       email: dev.email || '',
       specialty: dev.specialty || '',
       bio: dev.bio || '',
-      role: 'programmer',
-      photoURL: dev.photoURL || '',
       github: dev.socials?.github || '',
       instagram: dev.socials?.instagram || '',
       whatsapp: dev.socials?.whatsapp || '',
@@ -314,8 +264,8 @@ const ProgrammersPage = () => {
               <div className="flex items-center gap-4">
                 <div className="avatar">
                   <div className="w-24 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                    {photoPreview || form.photoURL ? (
-                      <img src={photoPreview || form.photoURL} alt="Preview" />
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Preview" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-base-300">
                         <span className="text-3xl">👤</span>
@@ -349,6 +299,7 @@ const ProgrammersPage = () => {
                 </label>
               )}
             </div>
+
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Correo *</span>
@@ -367,6 +318,7 @@ const ProgrammersPage = () => {
                 </label>
               )}
             </div>
+
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Especialidad *</span>
@@ -378,12 +330,8 @@ const ProgrammersPage = () => {
                 onBlur={() => handleBlur('specialty')}
                 className={`input input-bordered ${touched.specialty && formErrors.specialty ? 'input-error' : ''}`}
               />
-              {touched.specialty && formErrors.specialty && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{formErrors.specialty}</span>
-                </label>
-              )}
             </div>
+
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Bio</span>
@@ -396,14 +344,8 @@ const ProgrammersPage = () => {
                 className={`textarea textarea-bordered ${touched.bio && formErrors.bio ? 'textarea-error' : ''}`}
                 rows={3}
               />
-              {touched.bio && formErrors.bio && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{formErrors.bio}</span>
-                </label>
-              )}
             </div>
 
-            {/* Disponibilidad */}
             <div className="form-control">
               <label className="label cursor-pointer">
                 <span className="label-text">Disponible para asesorías</span>
@@ -420,21 +362,17 @@ const ProgrammersPage = () => {
               </label>
             </div>
 
-            {/* Horario */}
             {form.available && (
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-bold">Horarios de disponibilidad *</span>
                 </label>
-
-                {/* Input para agregar nuevo horario */}
                 <div className="join mb-3">
                   <input
                     type="time"
                     value={newTime}
                     onChange={(e) => setNewTime(e.target.value)}
                     className="input input-bordered join-item"
-                    placeholder="Selecciona hora"
                   />
                   <button
                     type="button"
@@ -449,8 +387,6 @@ const ProgrammersPage = () => {
                     <FiPlus /> Agregar
                   </button>
                 </div>
-
-                {/* Lista dinámica de horarios */}
                 <div className="space-y-2">
                   {times.map((time, index) => (
                     <div key={index} className="join w-full">
@@ -469,33 +405,20 @@ const ProgrammersPage = () => {
                         onClick={() => setTimes(times.filter((_, i) => i !== index))}
                         className="btn btn-error join-item"
                       >
-                        <FiTrash2 /> Eliminar
+                        <FiTrash2 />
                       </button>
                     </div>
                   ))}
-                  {times.length === 0 && (
-                    <div className="alert alert-warning">
-                      Debe agregar al menos 1 horario
-                    </div>
-                  )}
                 </div>
-                {formErrors.schedule && (
-                  <label className="label">
-                    <span className="label-text-alt text-error">{formErrors.schedule}</span>
-                  </label>
-                )}
               </div>
             )}
 
-            {/* FORMULARIOS DINÁMICOS - Habilidades */}
             <div className="divider">Habilidades / Skills</div>
 
             <div className="form-control">
               <label className="label">
                 <span className="label-text font-bold">Habilidades técnicas *</span>
               </label>
-
-              {/* Input para agregar nueva habilidad */}
               <div className="join mb-3">
                 <input
                   type="text"
@@ -508,7 +431,7 @@ const ProgrammersPage = () => {
                     }
                   }}
                   className="input input-bordered join-item flex-1"
-                  placeholder="Agregar habilidad (ej: TypeScript, Node.js)"
+                  placeholder="Agregar habilidad"
                 />
                 <button
                   type="button"
@@ -518,8 +441,6 @@ const ProgrammersPage = () => {
                   <FiPlus /> Agregar
                 </button>
               </div>
-
-              {/* Lista dinámica de habilidades */}
               <div className="space-y-2">
                 {skills.map((skill, index) => (
                   <div key={index} className="join w-full">
@@ -538,7 +459,7 @@ const ProgrammersPage = () => {
                       onClick={() => onDeleteSkill(index)}
                       className="btn btn-error join-item"
                     >
-                      <FiTrash2 /> Eliminar
+                      <FiTrash2 />
                     </button>
                   </div>
                 ))}
@@ -561,14 +482,9 @@ const ProgrammersPage = () => {
                 value={form.github}
                 onChange={handleChange}
                 onBlur={() => handleBlur('github')}
-                className={`input input-bordered ${touched.github && formErrors.github ? 'input-error' : ''}`}
+                className="input input-bordered"
                 placeholder="https://github.com/usuario"
               />
-              {touched.github && formErrors.github && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{formErrors.github}</span>
-                </label>
-              )}
             </div>
 
             <div className="form-control">
@@ -580,14 +496,9 @@ const ProgrammersPage = () => {
                 value={form.instagram}
                 onChange={handleChange}
                 onBlur={() => handleBlur('instagram')}
-                className={`input input-bordered ${touched.instagram && formErrors.instagram ? 'input-error' : ''}`}
+                className="input input-bordered"
                 placeholder="https://instagram.com/usuario"
               />
-              {touched.instagram && formErrors.instagram && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{formErrors.instagram}</span>
-                </label>
-              )}
             </div>
 
             <div className="form-control">
@@ -599,14 +510,9 @@ const ProgrammersPage = () => {
                 value={form.whatsapp}
                 onChange={handleChange}
                 onBlur={() => handleBlur('whatsapp')}
-                className={`input input-bordered ${touched.whatsapp && formErrors.whatsapp ? 'input-error' : ''}`}
-                placeholder="https://wa.me/593988888888"
+                className="input input-bordered"
+                placeholder="https://wa.me/593999999999"
               />
-              {touched.whatsapp && formErrors.whatsapp && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{formErrors.whatsapp}</span>
-                </label>
-              )}
             </div>
 
             <div className="card-actions justify-end gap-2">
@@ -657,12 +563,10 @@ const ProgrammersPage = () => {
                       <p className="text-xs text-base-content/60">{dev.email}</p>
                       <p className="text-sm text-base-content/70">{dev.bio}</p>
 
-                      {/* Habilidades */}
                       {dev.skills && dev.skills.length > 0 && (
                         <div className="mt-2">
-                          <p className="text-xs font-semibold text-base-content/70 mb-1">Habilidades:</p>
                           <div className="flex flex-wrap gap-1">
-                            {dev.skills.map((skill: string, idx: number) => (
+                            {dev.skills.map((skill, idx) => (
                               <span key={idx} className="badge badge-primary badge-sm">
                                 {skill}
                               </span>
@@ -671,42 +575,6 @@ const ProgrammersPage = () => {
                         </div>
                       )}
 
-                      {dev.socials && (
-                        <div className="mt-2 flex gap-2">
-                          {dev.socials.github && (
-                            <a
-                              href={dev.socials.github}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="badge badge-ghost badge-sm"
-                            >
-                              GitHub
-                            </a>
-                          )}
-                          {dev.socials.instagram && (
-                            <a
-                              href={dev.socials.instagram}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="badge badge-ghost badge-sm"
-                            >
-                              Instagram
-                            </a>
-                          )}
-                          {dev.socials.whatsapp && (
-                            <a
-                              href={dev.socials.whatsapp}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="badge badge-ghost badge-sm"
-                            >
-                              WhatsApp
-                            </a>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Botones de acción */}
                       <div className="mt-3 flex gap-2">
                         <button
                           onClick={() => handleEdit(dev)}
@@ -716,7 +584,7 @@ const ProgrammersPage = () => {
                           Editar
                         </button>
                         <button
-                          onClick={() => handleDelete(dev.id, dev.displayName)}
+                          onClick={() => handleDelete(dev.id!, dev.displayName)}
                           className="btn btn-sm btn-error gap-2"
                         >
                           <FiTrash2 className="h-4 w-4" />

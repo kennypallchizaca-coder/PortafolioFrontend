@@ -9,7 +9,7 @@ import Footer from '../components/Footer'
 const PublicLayout = () => (
   <div className="min-h-screen bg-base-100 text-base-content">
     <NavBar />
-    <main className="container mx-auto px-4 py-10">
+    <main className="pt-16">
       <Outlet />
     </main>
     <Footer />

@@ -4,13 +4,19 @@
  */
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../../services/firebase'
+import { getProgrammer, updateProgrammer, type ProgrammerProfile } from '../../services/programmers'
+import { uploadAvatar } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
 import FormInput from '../../components/FormInput'
 import FormTextarea from '../../components/FormTextarea'
-import { FiCamera, FiSave, FiPlus, FiX } from 'react-icons/fi'
+import { FiCamera, FiSave, FiPlus, FiTrash2 } from 'react-icons/fi'
+
+const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const hour = Math.floor(i / 2).toString().padStart(2, '0')
+  const minute = (i % 2) * 30 === 0 ? '00' : '30'
+  return `${hour}:${minute}`
+})
 
 const initialForm = {
   displayName: '',
@@ -24,7 +30,7 @@ const initialForm = {
 }
 
 const ProfileEditor = () => {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
@@ -33,6 +39,13 @@ const ProfileEditor = () => {
   const [photoPreview, setPhotoPreview] = useState('')
   const [skills, setSkills] = useState<string[]>(['JavaScript', 'React'])
   const [newSkill, setNewSkill] = useState('')
+  const [schedule, setSchedule] = useState<string[]>([])
+
+  // Estado para nuevo horario
+  const [selectedDay, setSelectedDay] = useState('Lunes')
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('17:00')
+
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
 
@@ -62,39 +75,33 @@ const ProfileEditor = () => {
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (!user?.uid) return
+      if (!user?.id) return
       try {
-        const docRef = doc(db, 'users', user.uid)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-          const data = docSnap.data()
-          setForm({
-            displayName: data.displayName || '',
-            email: data.email || '',
-            specialty: data.specialty || '',
-            bio: data.bio || '',
-            github: data.socials?.github || '',
-            instagram: data.socials?.instagram || '',
-            whatsapp: data.socials?.whatsapp || '',
-            available: data.available || false,
-          })
-          setSkills(data.skills || ['JavaScript', 'React'])
-          // Cargar foto desde localStorage
-          const savedPhoto = localStorage.getItem(`photo_${user.uid}`)
-          setPhotoPreview(savedPhoto || data.photoURL || '')
-        }
+        const data = await getProgrammer(user.id)
+        setForm({
+          displayName: data.displayName || '',
+          email: user.email || data.email || '', // Priorizar email de autenticación
+          specialty: data.specialty || '',
+          bio: data.bio || '',
+          github: data.socials?.github || '',
+          instagram: data.socials?.instagram || '',
+          whatsapp: data.socials?.whatsapp || '',
+          available: data.available || false,
+        })
+        setSkills(data.skills || ['JavaScript', 'React'])
+        setSchedule(data.schedule || [])
+        setPhotoPreview(data.photoURL || '')
       } catch (err) {
         console.error('Error cargando perfil:', err)
       }
     }
     loadProfile()
-  }, [user?.uid])
+  }, [user?.id])
 
+  // manejadores de eventos
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
-
-    // Validar en tiempo real si ya fue tocado
     if (touched[name]) {
       const fieldRules = validationRules[name as keyof typeof validationRules]
       if (fieldRules) {
@@ -106,7 +113,6 @@ const ProfileEditor = () => {
 
   const handleBlur = (fieldName: string) => {
     setTouched(prev => ({ ...prev, [fieldName]: true }))
-
     const fieldRules = validationRules[fieldName as keyof typeof validationRules]
     if (fieldRules) {
       const error = FormUtils.validate(form[fieldName as keyof typeof form], fieldRules)
@@ -126,28 +132,11 @@ const ProfileEditor = () => {
     }
   }
 
-  const uploadPhoto = async (uid: string, file: File): Promise<string> => {
-    try {
-      const storageRef = ref(storage, `programmers/${uid}/profile.jpg`)
-      const snapshot = await uploadBytes(storageRef, file)
-      const url = await getDownloadURL(storageRef)
-      return url
-    } catch (error: any) {
-      console.error('❌ Error al subir foto:', error)
-      console.error('Código de error:', error.code)
-      console.error('Mensaje:', error.message)
-
-      if (error.code === 'storage/unauthorized') {
-        throw new Error('⚠️ REGLAS DE STORAGE NO APLICADAS. Ve a Firebase Console > Storage > Rules.')
-      }
-      throw error
-    }
-  }
-
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!user?.uid) {
-      setError('No hay usuario autenticado')
+    if (!user?.id) {
+      console.error('Debug: User object missing ID', user)
+      setError(`No hay usuario autenticado o ID faltante. (Datos: ${JSON.stringify(user || 'null')})`)
       return
     }
 
@@ -162,7 +151,7 @@ const ProfileEditor = () => {
     const errors = FormUtils.validateForm(form, validationRules)
     setFormErrors(errors)
 
-    // Validar skills (mínimo 2)
+    // Validar skills
     if (skills.length < 2) {
       errors['skills'] = 'Debe tener al menos 2 habilidades'
     }
@@ -177,51 +166,49 @@ const ProfileEditor = () => {
     setError('')
 
     try {
-      let photoURL = user.photoURL
+      let photoURL = user.photoURL ?? undefined
 
-      // Guardar foto en localStorage si hay una nueva
       if (photoFile) {
-        const reader = new FileReader()
-        photoURL = await new Promise<string>((resolve) => {
-          reader.onloadend = () => {
-            const base64 = reader.result as string
-            localStorage.setItem(`photo_${user.uid}`, base64)
-            resolve(base64)
-          }
-          reader.readAsDataURL(photoFile)
-        })
+        try {
+          const uploadResult = await uploadAvatar(photoFile, user.id)
+          photoURL = uploadResult.url
+        } catch (uploadError) {
+          console.error('Error subiendo foto:', uploadError)
+          // continuar sin actualizar photoURL permite que las actualizaciones de texto funcionen
+          // opcional: agregar un mensaje de advertencia al usuario
+          setError('Error al subir la imagen. Se guardarán los otros cambios.')
+          // error no bloqueante para el resto del formulario
+        }
       }
 
-      // Construir objeto socials sin undefined
       const socials: Record<string, string> = {}
       if (form.github) socials.github = form.github
       if (form.instagram) socials.instagram = form.instagram
       if (form.whatsapp) socials.whatsapp = form.whatsapp
 
-      // Actualizar documento en Firestore (sin photoURL)
-      const docRef = doc(db, 'users', user.uid)
-
-      await updateDoc(docRef, {
+      await updateProgrammer(user.id, {
         displayName: form.displayName,
-        email: form.email,
         specialty: form.specialty,
         bio: form.bio,
         skills: skills,
+        schedule: schedule, // incluir horario
         socials,
         available: form.available,
-        updatedAt: serverTimestamp(),
+        photoURL,
       })
 
       setMessage('✓ Perfil actualizado correctamente.')
       setPhotoFile(null)
     } catch (err: any) {
       console.error('❌ Error completo:', err)
-      console.error('Código:', err.code)
-      console.error('Mensaje:', err.message)
       setError(`Error: ${err.message || 'No se pudo actualizar'}`)
     } finally {
       setLoading(false)
     }
+  }
+
+  if (authLoading) {
+    return <div className="p-8 text-center"><span className="loading loading-spinner loading-lg"></span></div>
   }
 
   return (
@@ -281,7 +268,7 @@ const ProfileEditor = () => {
               error={formErrors.email}
               touched={touched.email}
               required
-              placeholder="correo@ejemplo.com"
+              placeholder={user?.email || "correo@ejemplo.com"}
               autoComplete="email"
               disabled
               helpText="El email no se puede modificar"
@@ -301,17 +288,92 @@ const ProfileEditor = () => {
             maxLength={100}
           />
 
+
           {/* Disponibilidad */}
-          <div className="form-control">
-            <label className="label cursor-pointer">
-              <span className="label-text">Disponible para asesorías</span>
+          <div className="form-control bg-base-200/50 p-4 rounded-lg">
+            <label className="label cursor-pointer justify-start gap-4">
               <input
                 type="checkbox"
                 checked={form.available}
                 onChange={(e) => setForm((prev) => ({ ...prev, available: e.target.checked }))}
                 className="toggle toggle-primary"
               />
+              <span className="label-text text-lg font-medium">Disponible para asesorías</span>
             </label>
+
+            {/* Horarios de Disponibilidad */}
+            <div className={`mt-4 transition-all ${!form.available ? 'opacity-50 pointer-events-none' : ''}`}>
+              <label className="label">
+                <span className="label-text font-semibold">Horarios de Disponibilidad</span>
+                <span className="label-text-alt">Ej: "Lunes 09:00 - 12:00"</span>
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {schedule.map((item, idx) => (
+                  <div key={idx} className="badge badge-secondary gap-2 p-3">
+                    {item}
+                    <button
+                      type="button"
+                      onClick={() => setSchedule(schedule.filter((_, i) => i !== idx))}
+                      className="btn btn-ghost btn-xs btn-circle text-white"
+                    >
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-end gap-2 bg-base-100 p-3 rounded-lg border border-base-300">
+                <div className="form-control flex-1 min-w-[120px]">
+                  <label className="label-text text-xs mb-1">Día</label>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={selectedDay}
+                    onChange={(e) => setSelectedDay(e.target.value)}
+                  >
+                    {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
+                  </select>
+                </div>
+
+                <div className="form-control w-[100px]">
+                  <label className="label-text text-xs mb-1">Desde</label>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                  >
+                    {TIME_SLOTS.map(time => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </div>
+
+                <div className="form-control w-[100px]">
+                  <label className="label-text text-xs mb-1">Hasta</label>
+                  <select
+                    className="select select-bordered select-sm w-full"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                  >
+                    {TIME_SLOTS.map(time => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (startTime >= endTime) {
+                      setError('La hora de fin debe ser posterior a la de inicio')
+                      setTimeout(() => setError(''), 3000)
+                      return
+                    }
+                    const newSlot = `${selectedDay} ${startTime} - ${endTime}`
+                    if (!schedule.includes(newSlot)) {
+                      setSchedule([...schedule, newSlot])
+                    }
+                  }}
+                  className="btn btn-secondary btn-sm"
+                >
+                  <FiPlus /> Agregar
+                </button>
+              </div>
+            </div>
           </div>
 
           <FormTextarea
@@ -342,7 +404,7 @@ const ProfileEditor = () => {
                     onClick={() => setSkills(skills.filter((_, i) => i !== idx))}
                     className="btn btn-ghost btn-xs"
                   >
-                    ✕
+                    <FiTrash2 />
                   </button>
                 </div>
               ))}

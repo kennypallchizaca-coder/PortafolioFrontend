@@ -65,8 +65,8 @@ function App() {
           path="/admin"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['admin']}>
-                <DashboardLayout role="admin" />
+              <RoleGuard allowedRoles={['ROLE_ADMIN']}>
+                <DashboardLayout role="ROLE_ADMIN" />
               </RoleGuard>
             </ProtectedRoute>
           }
@@ -80,8 +80,8 @@ function App() {
           path="/panel"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['programmer']}>
-                <DashboardLayout role="programmer" />
+              <RoleGuard allowedRoles={['ROLE_PROGRAMMER']}>
+                <DashboardLayout role="ROLE_PROGRAMMER" />
               </RoleGuard>
             </ProtectedRoute>
           }

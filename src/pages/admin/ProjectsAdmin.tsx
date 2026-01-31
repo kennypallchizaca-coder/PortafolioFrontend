@@ -4,26 +4,12 @@
  */
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FiPlus, FiEdit2, FiTrash2, FiGithub, FiImage, FiSave, FiX, FiUpload } from 'react-icons/fi'
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, Timestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../../services/firebase'
+import { FiPlus, FiEdit2, FiTrash2, FiGithub, FiImage, FiSave, FiX } from 'react-icons/fi'
+import { getAllProjects, createProject, updateProject, deleteProject, type Project } from '../../services/projects'
+import { uploadProjectImage } from '../../services/upload'
 import { useAuth } from '../../context/AuthContext'
 import { Navigate } from 'react-router-dom'
 import { FormUtils } from '../../utils/FormUtils'
-
-interface Project {
-  id: string
-  title: string
-  description: string
-  imageUrl: string
-  githubUrl: string
-  demoUrl?: string
-  technologies: string[]
-  teamMembers: string[]
-  category: 'academico' | 'laboral'
-  createdAt: Date
-}
 
 const ProjectsAdmin = () => {
   const { user } = useAuth()
@@ -35,8 +21,8 @@ const ProjectsAdmin = () => {
   const [imagePreview, setImagePreview] = useState('')
 
   // Arrays dinámicos
-  const [technologies, setTechnologies] = useState<string[]>(['React', 'Firebase'])
-  const [teamMembers, setTeamMembers] = useState<string[]>(['Alexis'])
+  const [technologies, setTechnologies] = useState<string[]>(['React'])
+  const [teamMembers, setTeamMembers] = useState<string[]>(['Team Member'])
 
   // Controles temporales para agregar nuevos elementos
   const [newTechnology, setNewTechnology] = useState('')
@@ -78,13 +64,10 @@ const ProjectsAdmin = () => {
 
   const fetchProjects = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'projects'))
-      const projectsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date()
-      })) as Project[]
-      setProjects(projectsData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()))
+      const projectsData = await getAllProjects()
+      setProjects(projectsData.sort((a, b) =>
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      ))
     } catch (error) {
       console.error('Error fetching projects:', error)
     }
@@ -150,25 +133,6 @@ const ProjectsAdmin = () => {
     }
   }
 
-  const uploadImage = async (file: File): Promise<string> => {
-    try {
-      const timestamp = Date.now()
-      const storageRef = ref(storage, `projects/${timestamp}_${file.name}`)
-      const snapshot = await uploadBytes(storageRef, file)
-      const url = await getDownloadURL(storageRef)
-      return url
-    } catch (error: any) {
-      console.error('❌ Error al subir imagen:', error)
-      console.error('Código de error:', error.code)
-      console.error('Mensaje:', error.message)
-
-      if (error.code === 'storage/unauthorized') {
-        throw new Error('⚠️ REGLAS DE STORAGE NO APLICADAS. Ve a Firebase Console > Storage > Rules y aplica las reglas.')
-      }
-      throw new Error(`No se pudo subir la imagen: ${error.message}`)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -201,40 +165,28 @@ const ProjectsAdmin = () => {
     try {
       let imageUrl = formData.imageUrl
 
-      // Guardar imagen en localStorage si hay una nueva
+      // Subir imagen si hay una nueva
       if (imageFile) {
-        const reader = new FileReader()
-        imageUrl = await new Promise<string>((resolve) => {
-          reader.onloadend = () => {
-            const base64 = reader.result as string
-            const imageId = editingId || `proj_${Date.now()}`
-            localStorage.setItem(`project_img_${imageId}`, base64)
-            resolve(base64)
-          }
-          reader.readAsDataURL(imageFile)
-        })
+        const uploadResult = await uploadProjectImage(imageFile, editingId || 'temp')
+        imageUrl = uploadResult.url
       }
 
-      const projectData: any = {
+      const projectData = {
+        ownerId: user?.id || 'admin',
         title: formData.title,
         description: formData.description,
         imageUrl,
-        githubUrl: formData.githubUrl,
-        technologies: technologies,
-        teamMembers: teamMembers,
+        repoUrl: formData.githubUrl,
+        demoUrl: formData.demoUrl || undefined,
+        techStack: technologies,
         category: formData.category,
-        createdAt: Timestamp.now()
-      }
-
-      // Solo agregar demoUrl si tiene valor
-      if (formData.demoUrl && formData.demoUrl.trim() !== '') {
-        projectData.demoUrl = formData.demoUrl
+        role: 'fullstack' as const,
       }
 
       if (editingId) {
-        await updateDoc(doc(db, 'projects', editingId), projectData)
+        await updateProject(editingId, projectData)
       } else {
-        await addDoc(collection(db, 'projects'), projectData)
+        await createProject(projectData)
       }
 
       alert('✓ Proyecto guardado correctamente.')
@@ -242,7 +194,7 @@ const ProjectsAdmin = () => {
       await fetchProjects()
     } catch (error: any) {
       console.error('❌ Error completo al guardar proyecto:', error)
-      alert(`Error al guardar: ${error.message || 'Verifica permisos de Firebase'}`)
+      alert(`Error al guardar: ${error.message || 'Error al conectar con el servidor'}`)
     } finally {
       setLoading(false)
     }
@@ -251,23 +203,24 @@ const ProjectsAdmin = () => {
   const handleEdit = (project: Project) => {
     setFormData({
       title: project.title,
-      description: project.description,
-      imageUrl: project.imageUrl,
-      githubUrl: project.githubUrl,
+      description: project.description || '',
+      imageUrl: project.imageUrl || '',
+      githubUrl: project.repoUrl || '',
       demoUrl: project.demoUrl || '',
       category: project.category || 'academico',
     })
-    setTechnologies(project.technologies || [])
-    setTeamMembers(project.teamMembers || [])
-    setEditingId(project.id)
+    setTechnologies(project.techStack || [])
+    setTeamMembers(['Team Member']) // No tenemos teamMembers en el modelo
+    setEditingId(project.id!)
     setShowForm(true)
+    setImagePreview(project.imageUrl || '')
   }
 
   const handleDelete = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este proyecto?')) return
 
     try {
-      await deleteDoc(doc(db, 'projects', id))
+      await deleteProject(id)
       fetchProjects()
     } catch (error) {
       console.error('Error deleting project:', error)
@@ -284,8 +237,8 @@ const ProjectsAdmin = () => {
       demoUrl: '',
       category: 'academico',
     })
-    setTechnologies(['React', 'Firebase'])
-    setTeamMembers(['Alexis'])
+    setTechnologies(['React'])
+    setTeamMembers(['Team Member'])
     setNewTechnology('')
     setNewTeamMember('')
     setImageFile(null)
@@ -351,11 +304,18 @@ const ProjectsAdmin = () => {
                     </label>
                     <input
                       type="text"
+                      name="title"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur('title')}
                       className="input input-bordered"
                       required
                     />
+                    {formErrors.title && touched.title && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">{formErrors.title}</span>
+                      </label>
+                    )}
                   </div>
 
                   <div className="form-control">
@@ -368,8 +328,10 @@ const ProjectsAdmin = () => {
                       </span>
                       <input
                         type="url"
+                        name="githubUrl"
                         value={formData.githubUrl}
-                        onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('githubUrl')}
                         className="input input-bordered join-item w-full"
                         placeholder="https://github.com/..."
                         required
@@ -383,8 +345,10 @@ const ProjectsAdmin = () => {
                     <span className="label-text">Descripción *</span>
                   </label>
                   <textarea
+                    name="description"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={handleChange}
+                    onBlur={() => handleBlur('description')}
                     className="textarea textarea-bordered h-24"
                     required
                   />
@@ -409,7 +373,7 @@ const ProjectsAdmin = () => {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="form-control">
                     <label className="label">
-                      <span className="label-text">Imagen del Proyecto *</span>
+                      <span className="label-text">Imagen del Proyecto</span>
                     </label>
                     <div className="space-y-2">
                       {(imagePreview || formData.imageUrl) && (
@@ -427,19 +391,6 @@ const ProjectsAdmin = () => {
                         onChange={handleImageChange}
                         className="file-input file-input-bordered w-full"
                       />
-                      <div className="divider text-xs">O</div>
-                      <div className="join w-full">
-                        <span className="join-item btn btn-disabled">
-                          <FiImage className="h-5 w-5" />
-                        </span>
-                        <input
-                          type="url"
-                          value={formData.imageUrl}
-                          onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                          className="input input-bordered join-item w-full"
-                          placeholder="O pega una URL de imagen"
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -449,8 +400,9 @@ const ProjectsAdmin = () => {
                     </label>
                     <input
                       type="url"
+                      name="demoUrl"
                       value={formData.demoUrl}
-                      onChange={(e) => setFormData({ ...formData, demoUrl: e.target.value })}
+                      onChange={handleChange}
                       className="input input-bordered"
                       placeholder="https://..."
                     />
@@ -489,7 +441,7 @@ const ProjectsAdmin = () => {
 
                   {/* Lista dinámica de tecnologías */}
                   <div className="space-y-2">
-                    {(technologies || []).map((tech, index) => (
+                    {technologies.map((tech, index) => (
                       <div key={index} className="join w-full">
                         <input
                           type="text"
@@ -513,67 +465,6 @@ const ProjectsAdmin = () => {
                     {technologies.length === 0 && (
                       <div className="alert alert-warning">
                         Debe agregar al menos 1 tecnología
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* FORMULARIOS DINÁMICOS - Miembros del equipo */}
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text font-bold">Miembros del Equipo *</span>
-                  </label>
-
-                  {/* Input para agregar nuevo miembro */}
-                  <div className="join mb-3">
-                    <input
-                      type="text"
-                      value={newTeamMember}
-                      onChange={(e) => setNewTeamMember(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          onAddTeamMember()
-                        }
-                      }}
-                      className="input input-bordered join-item flex-1"
-                      placeholder="Agregar miembro del equipo"
-                    />
-                    <button
-                      type="button"
-                      onClick={onAddTeamMember}
-                      className="btn btn-primary join-item"
-                    >
-                      <FiPlus /> Agregar
-                    </button>
-                  </div>
-
-                  {/* Lista dinámica de miembros */}
-                  <div className="space-y-2">
-                    {(teamMembers || []).map((member, index) => (
-                      <div key={index} className="join w-full">
-                        <input
-                          type="text"
-                          value={member}
-                          onChange={(e) => {
-                            const newMembers = [...teamMembers]
-                            newMembers[index] = e.target.value
-                            setTeamMembers(newMembers)
-                          }}
-                          className="input input-bordered join-item flex-1"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => onDeleteTeamMember(index)}
-                          className="btn btn-error join-item"
-                        >
-                          <FiTrash2 /> Eliminar
-                        </button>
-                      </div>
-                    ))}
-                    {teamMembers.length === 0 && (
-                      <div className="alert alert-warning">
-                        Debe agregar al menos 1 miembro del equipo
                       </div>
                     )}
                   </div>
@@ -636,7 +527,7 @@ const ProjectsAdmin = () => {
                   {project.description}
                 </p>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {(project.technologies || []).slice(0, 3).map((tech, i) => (
+                  {(project.techStack || []).slice(0, 3).map((tech, i) => (
                     <span key={i} className="badge badge-sm badge-primary badge-outline">
                       {tech}
                     </span>
@@ -651,7 +542,7 @@ const ProjectsAdmin = () => {
                     Editar
                   </button>
                   <button
-                    onClick={() => handleDelete(project.id)}
+                    onClick={() => handleDelete(project.id!)}
                     className="btn btn-sm btn-error gap-2"
                   >
                     <FiTrash2 className="h-4 w-4" />

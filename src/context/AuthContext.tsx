@@ -1,106 +1,109 @@
 /**
- * Contexto de autenticación y roles.
- * Prácticas: Fundamentos (estado/context), consumo de Firebase Auth y routing protegido.
+ * AuthContext para autenticación con JWT.
  */
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useMemo,
-  ReactNode,
-} from 'react'
-import {
-  loginWithGoogle,
-  logout,
-  subscribeToAuthChanges,
-  fetchUserProfile,
-  Role,
-  UserProfile,
-} from '../services/auth'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
-import { db } from '../services/firebase'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import * as authService from '../services/auth'
+
+export type Role = authService.Role
+export type UserProfile = authService.UserProfile
 
 interface AuthContextValue {
-  user: (UserProfile & { uid: string }) | null
+  user: UserProfile | null
   role: Role | null
   loading: boolean
-  login: () => Promise<unknown>
+  login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   isAuthenticated: boolean
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null)
+const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<(UserProfile & { uid: string }) | null>(null)
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [role, setRole] = useState<Role | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Escuchamos cambios de sesión
   useEffect(() => {
-    const unsub = subscribeToAuthChanges(async (firebaseUser) => {
-      if (!firebaseUser) {
-        setUser(null)
-        setRole(null)
+    const initAuth = async () => {
+      setLoading(true)
+
+      const token = localStorage.getItem('auth_token')
+      if (!token) {
         setLoading(false)
         return
       }
 
-      // Obtener perfil de Firestore
-      const profile = await fetchUserProfile(firebaseUser.uid)
-      
-      if (profile) {
-        setUser({ uid: firebaseUser.uid, ...profile })
-        setRole(profile.role ?? 'external')
-      } else {
-        // Usar datos de Firebase Auth si no hay perfil en Firestore
-        setUser({
-          uid: firebaseUser.uid,
-          displayName: firebaseUser.displayName,
-          email: firebaseUser.email,
-          photoURL: firebaseUser.photoURL,
-          role: 'external',
-        })
-        setRole('external')
+      try {
+        const verifiedUser = await authService.verifyToken()
+        if (verifiedUser) {
+          setUser(verifiedUser)
+          setRole(verifiedUser.role)
+        } else {
+          setUser(null)
+          setRole(null)
+        }
+      } catch (error) {
+        console.error('Error verificando token:', error)
+        setUser(null)
+        setRole(null)
       }
-      
-      setLoading(false)
-    })
 
-    return unsub
+      setLoading(false)
+    }
+
+    initAuth()
   }, [])
 
-  // Login con Google
-  const login = async () => {
+  // Login con email y contraseña
+  const login = async (email: string, password: string) => {
     setLoading(true)
     try {
-      const res = await loginWithGoogle()
-      setLoading(false)
-      return res
+      const response = await authService.login(email, password)
+      setUser(response.user)
+      setRole(response.user.role)
     } catch (error) {
-      setLoading(false)
+      console.error('Error en login:', error)
       throw error
+    } finally {
+      setLoading(false)
     }
   }
 
-  const value: AuthContextValue = useMemo(
-    () => ({
-      user,
-      role,
-      loading,
-      login,
-      logout,
-      isAuthenticated: !!user,
-    }),
-    [user, role, loading],
-  )
+  const logout = async () => {
+    setLoading(true)
+    try {
+      await authService.logout()
+      setUser(null)
+      setRole(null)
+    } catch (error) {
+      console.error('Error en logout:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  const isAuthenticated = !!user
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        role,
+        loading,
+        login,
+        logout,
+        isAuthenticated,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth debe usarse dentro de AuthProvider')
-  return ctx
+  const context = useContext(AuthContext)
+  if (!context) {
+    throw new Error('useAuth debe usarse dentro de AuthProvider')
+  }
+  return context
 }

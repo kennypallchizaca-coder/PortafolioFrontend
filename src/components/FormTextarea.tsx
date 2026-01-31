@@ -29,6 +29,8 @@ interface FormTextareaProps {
     minLength?: number
 }
 
+import { FiInfo, FiAlertCircle } from 'react-icons/fi'
+
 export const FormTextarea: React.FC<FormTextareaProps> = ({
     label,
     name,
@@ -66,11 +68,11 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
                 </span>
                 {helpText && (
                     <span
-                        className="label-text-alt tooltip tooltip-left cursor-help"
+                        className="label-text-alt tooltip tooltip-left cursor-help flex items-center"
                         data-tip={helpText}
                         id={helpId}
                     >
-                        <span className="text-info">ℹ️</span>
+                        <FiInfo className="text-info w-4 h-4" />
                     </span>
                 )}
             </label>
@@ -94,7 +96,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
                 <span className="label-text-alt">
                     {hasError && (
                         <span id={errorId} className="text-error flex items-center gap-1">
-                            <span>⚠️</span>
+                            <FiAlertCircle className="w-4 h-4" />
                             <span>{error}</span>
                         </span>
                     )}

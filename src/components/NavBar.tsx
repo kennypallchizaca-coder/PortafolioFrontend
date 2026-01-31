@@ -7,14 +7,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import Logo from './Logo';
-import { 
-  FiHome, 
-  FiUsers, 
-  FiCode, 
-  FiLogOut, 
-  FiSettings, 
-  FiSun, 
-  FiMoon 
+import {
+  FiHome,
+  FiUsers,
+  FiCode,
+  FiLogOut,
+  FiSettings,
+  FiSun,
+  FiMoon
 } from 'react-icons/fi';
 import { useState } from 'react';
 
@@ -44,8 +44,16 @@ const NavBar = () => {
     }
   };
 
+  // Helper para verificar rol de manera flexible y robusta
+  const isExternal = isAuthenticated && (() => {
+    const r = (role as string)?.toLowerCase() || ''
+    return ['role_external', 'external', 'role_user', 'user'].includes(r)
+  })()
+
+
+
   return (
-    <div className="navbar bg-base-100 shadow-md sticky top-0 z-50">
+    <div className="navbar bg-base-100 shadow-md fixed top-0 w-full z-50">
       <div className="navbar-start">
         <div className="dropdown">
           <label tabIndex={0} className="btn btn-ghost lg:hidden">
@@ -69,23 +77,23 @@ const NavBar = () => {
                 <FiCode /> Proyectos
               </Link>
             </li>
-              {isAuthenticated && role === 'external' && (
-                <>
-                  <li className="menu-title">
-                    <span>Asesorías</span>
-                  </li>
-                  <li>
-                    <Link to="/agendar-asesoria">
-                      Agendar
-                    </Link>
-                  </li>
-                  <li>
-                    <Link to="/mis-solicitudes">
-                      Mis Solicitudes
-                    </Link>
-                  </li>
-                </>
-              )}
+            {isExternal && (
+              <>
+                <li className="menu-title">
+                  <span>Asesorías</span>
+                </li>
+                <li>
+                  <Link to="/agendar-asesoria">
+                    Agendar
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/mis-solicitudes">
+                    Mis Solicitudes
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
         <div onClick={handleLogoClick} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
@@ -111,17 +119,17 @@ const NavBar = () => {
               <FiCode /> Proyectos
             </Link>
           </li>
-            {isAuthenticated && role === 'external' && (
-              <li>
-                <details>
-                  <summary>Asesorías</summary>
-                  <ul className="p-2 bg-base-100 rounded-box w-48">
-                    <li><Link to="/agendar-asesoria">Agendar</Link></li>
-                    <li><Link to="/mis-solicitudes">Mis Solicitudes</Link></li>
-                  </ul>
-                </details>
-              </li>
-            )}
+          {isExternal && (
+            <li>
+              <details>
+                <summary>Asesorías</summary>
+                <ul className="p-2 bg-base-100 rounded-box w-48">
+                  <li><Link to="/agendar-asesoria">Agendar</Link></li>
+                  <li><Link to="/mis-solicitudes">Mis Solicitudes</Link></li>
+                </ul>
+              </details>
+            </li>
+          )}
         </ul>
       </div>
 
@@ -149,20 +157,30 @@ const NavBar = () => {
               <li className="menu-title">
                 <span>{user.email}</span>
               </li>
-              {role === 'admin' && (
-                <li>
-                  <Link to="/admin" className="flex items-center gap-2">
-                    <FiSettings /> Panel Admin
-                  </Link>
-                </li>
-              )}
-              {role === 'programmer' && (
-                <li>
-                  <Link to="/panel" className="flex items-center gap-2">
-                    <FiCode /> Mi Dashboard
-                  </Link>
-                </li>
-              )}
+              {(() => {
+                const r = (role as string)?.toLowerCase() || ''
+                const isAdmin = ['role_admin', 'admin'].includes(r)
+                const isProgrammer = ['role_programmer', 'programmer'].includes(r)
+
+                return (
+                  <>
+                    {isAdmin && (
+                      <li>
+                        <Link to="/admin" className="flex items-center gap-2">
+                          <FiSettings /> Panel Admin
+                        </Link>
+                      </li>
+                    )}
+                    {isProgrammer && (
+                      <li>
+                        <Link to="/panel" className="flex items-center gap-2">
+                          <FiCode /> Mi Dashboard
+                        </Link>
+                      </li>
+                    )}
+                  </>
+                )
+              })()}
               <li>
                 <button onClick={handleLogout} className="flex items-center gap-2 text-error">
                   <FiLogOut /> Cerrar sesión

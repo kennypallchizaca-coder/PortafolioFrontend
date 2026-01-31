@@ -1,63 +1,84 @@
 /**
- * Vista pública de un portafolio individual.
- * Prácticas: Routing con parámetros, UX de carga/skeleton.
+ * Vista pública del portafolio de un programador
  */
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { getPortfolio, listProjectsByOwner, type Portfolio } from '../../services/firestore'
-import type { DocumentData } from 'firebase/firestore'
+import { getProgrammer, getPortfolio, type ProgrammerProfile, type Portfolio } from '../../services/programmers'
+import { getProjectsByOwner, type Project } from '../../services/projects'
+import { FiGithub, FiExternalLink } from 'react-icons/fi'
 
 const PortfolioPublic = () => {
   const { id } = useParams<{ id: string }>()
+  const [programmer, setProgrammer] = useState<ProgrammerProfile | null>(null)
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null)
-  const [projects, setProjects] = useState<(DocumentData & { id: string })[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadData = async () => {
-      if (!id) return
+      if (!id) {
+        setLoading(false)
+        return
+      }
+
       try {
-        const [pf, pj] = await Promise.all([
-          getPortfolio(id),
-          listProjectsByOwner(id),
+        const [programmerData, portfolioData, projectsData] = await Promise.all([
+          getProgrammer(id),
+          getPortfolio(id).catch(() => null),
+          getProjectsByOwner(id).catch(() => [])
         ])
-        setPortfolio(pf)
-        setProjects(pj)
+
+        setProgrammer(programmerData)
+        setPortfolio(portfolioData)
+        setProjects(projectsData)
+      } catch (err) {
+        console.error('Error loading portfolio:', err)
       } finally {
         setLoading(false)
       }
     }
+
     loadData()
   }, [id])
 
   if (loading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="skeleton h-32 w-full" />
-        ))}
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-spinner loading-lg"></span>
       </div>
     )
   }
 
-  if (!portfolio) {
+  if (!programmer) {
     return (
-      <div className="alert alert-warning">
-        Portafolio no encontrado o no publicado.
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="alert alert-error max-w-md">
+          <span>Programador no encontrado</span>
+        </div>
       </div>
     )
+  }
+
+  // Ensure we have displayable data even if explicit portfolio is missing
+  // asegurar que tenemos datos para mostrar incluso si falta el portafolio explícito
+  const displayPortfolio: Portfolio = portfolio || {
+    headline: programmer.displayName,
+    about: programmer.bio || 'Sin biografía',
+    skills: programmer.skills || [],
+    tags: programmer.specialty ? [programmer.specialty] : [],
+    theme: 'light'
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 container mx-auto px-4 py-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="badge badge-outline">{portfolio?.tags?.join(' · ')}</p>
-          <h1 className="text-3xl font-bold">{portfolio.headline}</h1>
-          <p className="text-base-content/70">{portfolio.about}</p>
+          <p className="badge badge-outline">{displayPortfolio.tags?.join(' · ')}</p>
+          <h1 className="text-3xl font-bold mt-2">{displayPortfolio.headline}</h1>
+          <p className="text-base-content/70 mt-1 max-w-2xl">{displayPortfolio.about}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {portfolio.skills?.map((skill) => (
+          {displayPortfolio.skills?.map((skill) => (
             <div key={skill} className="badge badge-primary">
               {skill}
             </div>
@@ -66,7 +87,7 @@ const PortfolioPublic = () => {
       </header>
 
       <section>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Proyectos</h2>
           <div className="badge badge-secondary">
             {projects.length} proyectos
@@ -74,41 +95,41 @@ const PortfolioPublic = () => {
         </div>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           {projects.map((project) => (
-            <div key={project.id} className="card bg-base-100 shadow-md">
+            <div key={project.id} className="card bg-base-100 shadow-md border border-base-200">
               <div className="card-body">
                 <div className="flex items-center justify-between">
-                  <h3 className="card-title">{project.title}</h3>
-                  <div className="badge badge-outline">{project.category}</div>
+                  <h3 className="card-title text-lg">{project.title}</h3>
+                  <div className="badge badge-outline capitalize">{project.category}</div>
                 </div>
-                <p className="text-sm text-base-content/70">
+                <p className="text-sm text-base-content/70 mt-2">
                   {project.description}
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mt-4">
                   {project.techStack?.map((tech: string) => (
-                    <span key={tech} className="badge badge-ghost">
+                    <span key={tech} className="badge badge-ghost badge-sm">
                       {tech}
                     </span>
                   ))}
                 </div>
-                <div className="card-actions justify-end">
+                <div className="card-actions justify-end mt-4 pt-2 border-t border-base-200">
                   {project.repoUrl && (
                     <a
-                      className="btn btn-sm btn-outline"
+                      className="btn btn-sm btn-outline gap-2"
                       href={project.repoUrl}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Código
+                      <FiGithub /> Código
                     </a>
                   )}
                   {project.demoUrl && (
                     <a
-                      className="btn btn-sm btn-primary"
+                      className="btn btn-sm btn-primary gap-2"
                       href={project.demoUrl}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Demo
+                      <FiExternalLink /> Demo
                     </a>
                   )}
                 </div>
@@ -116,6 +137,11 @@ const PortfolioPublic = () => {
             </div>
           ))}
         </div>
+        {projects.length === 0 && (
+          <div className="text-center py-12 bg-base-100 rounded-lg border border-base-content/10">
+            <p className="text-base-content/50">No hay proyectos publicados aún.</p>
+          </div>
+        )}
       </section>
     </div>
   )

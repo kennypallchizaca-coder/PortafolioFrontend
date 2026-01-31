@@ -24,7 +24,17 @@ const RoleGuard = ({
     )
   }
 
-  if (!role || !allowedRoles.includes(role)) {
+  // Lógica robusta de comparación de roles
+  const hasPermission = (() => {
+    if (!role) return false
+
+    const normalize = (r: string) => r.toLowerCase().replace(/^role_/, '')
+    const userRoleNormalized = normalize(role)
+
+    return allowedRoles.some(allowed => normalize(allowed) === userRoleNormalized)
+  })()
+
+  if (!hasPermission) {
     return <Navigate to="/" replace />
   }
 

@@ -1,31 +1,28 @@
 /**
  * Bandeja de asesorías del programador.
- * Prácticas: Consumo Firestore, manejo de estados, feedback.
+ * Prácticas: REST API, manejo de estados, feedback.
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { listAdvisoriesByProgrammer, updateAdvisoryStatus } from '../../services/firestore'
-import { sendRequesterStatusEmail } from '../../services/email'
-import type { DocumentData } from 'firebase/firestore'
+import { getAdvisoriesByProgrammer, updateAdvisoryStatus, type Advisory } from '../../services/advisories'
 
 const AdvisoryInbox = () => {
   const { user } = useAuth()
-  const [items, setItems] = useState<(DocumentData & { id: string })[]>([])
+  const [items, setItems] = useState<Advisory[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [filter, setFilter] = useState<'todas' | 'pendiente' | 'aprobada' | 'rechazada'>('pendiente')
+  const [filter, setFilter] = useState<'todas' | 'pending' | 'approved' | 'rejected'>('pending')
 
-    // Limpia la lista visual de asesorías
-    const clearHistory = () => {
-      setItems([])
-    }
+  const clearHistory = () => {
+    setItems([])
+  }
 
   const load = async () => {
-    if (!user?.uid) return
+    if (!user?.id) return
     setLoading(true)
     setError('')
     try {
-      const data = await listAdvisoriesByProgrammer(user.uid)
+      const data = await getAdvisoriesByProgrammer(user.id)
       setItems(data)
     } catch (err) {
       setError('No se pudieron cargar las asesorías.')
@@ -36,34 +33,19 @@ const AdvisoryInbox = () => {
 
   useEffect(() => {
     load()
-  }, [user?.uid])
+  }, [user?.id])
 
-  const updateStatus = async (id: string, status: 'pendiente' | 'aprobada' | 'rechazada', response?: string) => {
+  const updateStatus = async (id: string, status: 'pending' | 'approved' | 'rejected', response?: string) => {
     try {
-      const item = items.find(i => i.id === id)
-      await updateAdvisoryStatus(id, status, response || (status === 'aprobada' ? 'Confirmada' : 'Rechazada'))
-
-      // Enviar notificación por email al solicitante
-      if (item) {
-        await sendRequesterStatusEmail({
-          requesterEmail: item.requesterEmail,
-          requesterName: item.requesterName,
-          programmerName: user?.displayName || 'Programador',
-          status,
-          date: item.slot?.date,
-          time: item.slot?.time,
-          responseMessage: response || (status === 'aprobada' ? 'Confirmada' : 'Rechazada'),
-        })
-      }
-
+      await updateAdvisoryStatus(id, status, response || (status === 'approved' ? 'Confirmada' : 'Rechazada'))
       await load()
     } catch (err) {
       setError('No se pudo actualizar el estado.')
     }
   }
 
-  const filteredItems = filter === 'todas' 
-    ? items 
+  const filteredItems = filter === 'todas'
+    ? items
     : items.filter(item => item.status === filter)
 
   return (
@@ -84,39 +66,34 @@ const AdvisoryInbox = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="flex gap-2">
-        <button 
-          className={`btn btn-sm ${filter === 'pendiente' ? 'btn-primary' : 'btn-outline'}`}
-          onClick={() => setFilter('pendiente')}
+        <button
+          className={`btn btn-sm ${filter === 'pending' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setFilter('pending')}
         >
           Pendientes
         </button>
-        <button 
-          className={`btn btn-sm ${filter === 'aprobada' ? 'btn-success' : 'btn-outline'}`}
-          onClick={() => setFilter('aprobada')}
+        <button
+          className={`btn btn-sm ${filter === 'approved' ? 'btn-success' : 'btn-outline'}`}
+          onClick={() => setFilter('approved')}
         >
           Aprobadas
         </button>
-        <button 
-          className={`btn btn-sm ${filter === 'rechazada' ? 'btn-error' : 'btn-outline'}`}
-          onClick={() => setFilter('rechazada')}
+        <button
+          className={`btn btn-sm ${filter === 'rejected' ? 'btn-error' : 'btn-outline'}`}
+          onClick={() => setFilter('rejected')}
         >
           Rechazadas
         </button>
-        <button 
+        <button
           className={`btn btn-sm ${filter === 'todas' ? 'btn-accent' : 'btn-outline'}`}
           onClick={() => setFilter('todas')}
         >
           Todas
         </button>
-        
-
-
       </div>
-      
-      
-      
+
       {error && <div className="alert alert-error text-sm">{error}</div>}
       {loading && <div className="skeleton h-20 w-full" />}
       <div className="space-y-2">
@@ -131,20 +108,20 @@ const AdvisoryInbox = () => {
                 <span className="badge badge-outline capitalize">{item.status}</span>
               </div>
               <p className="text-sm">
-                Fecha: {item.slot?.date} · Hora: {item.slot?.time}
+                Fecha: {item.date} · Hora: {item.time}
               </p>
               <p className="text-sm text-base-content/70">{item.note}</p>
               {item.status === 'pending' && (
                 <div className="card-actions justify-end">
                   <button
                     className="btn btn-success btn-sm"
-                    onClick={() => updateStatus(item.id, 'aprobada')}
+                    onClick={() => updateStatus(item.id!, 'approved')}
                   >
                     Aprobar
                   </button>
                   <button
                     className="btn btn-error btn-sm"
-                    onClick={() => updateStatus(item.id, 'rechazada')}
+                    onClick={() => updateStatus(item.id!, 'rejected')}
                   >
                     Rechazar
                   </button>
@@ -155,7 +132,7 @@ const AdvisoryInbox = () => {
         ))}
         {!filteredItems.length && !loading && (
           <div className="alert alert-info text-sm">
-            No hay solicitudes {filter === 'todas' ? '' : filter === 'pendiente' ? 'pendientes' : `${filter}s`}.
+            No hay solicitudes {filter === 'todas' ? '' : filter === 'pending' ? 'pendientes' : `${filter}s`}.
           </div>
         )}
       </div>

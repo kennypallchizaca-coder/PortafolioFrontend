@@ -339,7 +339,7 @@ const Home = () => {
 
             {/* CTA Buttons */}
             {/* Solo visible para no autenticados o externos, oculto para programmers/admins */}
-            {(!isAuthenticated || role === 'external') && (
+            {(!isAuthenticated || ['role_external', 'external', 'role_user', 'user'].includes((role as string)?.toLowerCase() || '')) && (
               <div className="flex flex-wrap justify-center gap-4 pt-8">
                 <Link
                   to="/agendar-asesoria"

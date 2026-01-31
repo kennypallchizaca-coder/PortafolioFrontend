@@ -4,14 +4,13 @@
  */
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { getPortfolio, upsertPortfolio } from '../../services/firestore'
+import { getPortfolio, upsertPortfolio } from '../../services/portfolios'
 
 const initial = {
-  headline: '',
-  about: '',
-  skills: '',
-  tags: '',
+  title: '',
+  description: '',
   theme: 'light',
+  isPublic: true,
 }
 
 const PortfolioEditor = () => {
@@ -23,29 +22,29 @@ const PortfolioEditor = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!user?.uid) return
-      const data = await getPortfolio(user.uid)
+      if (!user?.id) return
+      const data = await getPortfolio(user.id)
       if (data) {
         setForm({
-          headline: data.headline || '',
-          about: data.about || '',
-          skills: data.skills?.join(', ') || '',
-          tags: data.tags?.join(', ') || '',
+          title: data.title || '',
+          description: data.description || '',
           theme: data.theme || 'light',
+          isPublic: data.isPublic ?? true,
         })
       }
     }
     load()
-  }, [user?.uid])
+  }, [user?.id])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target
+    const checked = (e.target as HTMLInputElement).checked
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!user?.uid) {
+    if (!user?.id) {
       setError('Usuario no autenticado')
       return
     }
@@ -53,16 +52,16 @@ const PortfolioEditor = () => {
     setMessage('')
     setError('')
     try {
-      await upsertPortfolio(user.uid, {
-        headline: form.headline,
-        about: form.about,
-        skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean),
-        tags: form.tags.split(',').map((s) => s.trim()).filter(Boolean),
+      await upsertPortfolio(user.id, {
+        title: form.title,
+        description: form.description,
         theme: form.theme,
+        isPublic: form.isPublic,
       })
-      setMessage('Portafolio guardado.')
-    } catch (err) {
-      setError('No se pudo guardar. Revisa conexión.')
+      setMessage('✓ Portafolio guardado correctamente.')
+    } catch (err: any) {
+      console.error('Error saving portfolio:', err)
+      setError(err.response?.data?.message || 'No se pudo guardar. Revisa tu conexión.')
     } finally {
       setLoading(false)
     }
@@ -75,56 +74,35 @@ const PortfolioEditor = () => {
         <div className="card-body space-y-3">
           {message && <div className="alert alert-success text-sm">{message}</div>}
           {error && <div className="alert alert-error text-sm">{error}</div>}
+
           <div className="form-control">
             <label className="label">
-              <span className="label-text">Headline *</span>
+              <span className="label-text">Título del Portafolio *</span>
             </label>
             <input
-              name="headline"
-              value={form.headline}
+              name="title"
+              value={form.title}
               onChange={handleChange}
               className="input input-bordered"
+              placeholder="Ej: Desarrollador Full Stack React + Node.js"
               required
             />
           </div>
+
           <div className="form-control">
             <label className="label">
-              <span className="label-text">Sobre mí</span>
+              <span className="label-text">Descripción</span>
             </label>
             <textarea
-              name="about"
-              value={form.about}
+              name="description"
+              value={form.description}
               onChange={handleChange}
               className="textarea textarea-bordered"
-              rows={3}
+              rows={5}
+              placeholder="Cuéntanos sobre tus proyectos, experiencia y habilidades..."
             />
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Skills (coma)</span>
-              </label>
-              <input
-                name="skills"
-                value={form.skills}
-                onChange={handleChange}
-                className="input input-bordered"
-                placeholder="React, Firebase, Tailwind"
-              />
-            </div>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Tags (coma)</span>
-              </label>
-              <input
-                name="tags"
-                value={form.tags}
-                onChange={handleChange}
-                className="input input-bordered"
-                placeholder="Frontend, Fullstack"
-              />
-            </div>
-          </div>
+
           <div className="form-control">
             <label className="label">
               <span className="label-text">Tema DaisyUI</span>
@@ -138,8 +116,24 @@ const PortfolioEditor = () => {
               <option value="light">Claro</option>
               <option value="dark">Oscuro</option>
               <option value="emerald">Emerald</option>
+              <option value="forest">Forest</option>
+              <option value="aqua">Aqua</option>
             </select>
           </div>
+
+          <div className="form-control">
+            <label className="label cursor-pointer">
+              <span className="label-text">Portafolio público (visible para todos)</span>
+              <input
+                type="checkbox"
+                name="isPublic"
+                checked={form.isPublic}
+                onChange={handleChange}
+                className="toggle toggle-primary"
+              />
+            </label>
+          </div>
+
           <div className="card-actions justify-end">
             <button className="btn btn-primary" type="submit" disabled={loading}>
               {loading ? 'Guardando...' : 'Guardar portafolio'}

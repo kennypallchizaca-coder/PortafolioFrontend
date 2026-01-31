@@ -27,7 +27,10 @@ interface FormInputProps {
     disabled?: boolean
     autoComplete?: string
     maxLength?: number
+    readOnly?: boolean
 }
+
+import { FiInfo, FiAlertCircle } from 'react-icons/fi'
 
 export const FormInput: React.FC<FormInputProps> = ({
     label,
@@ -44,6 +47,7 @@ export const FormInput: React.FC<FormInputProps> = ({
     disabled,
     autoComplete,
     maxLength,
+    readOnly,
 }) => {
     const hasError = touched && error
     const inputId = `input-${name}`
@@ -58,11 +62,11 @@ export const FormInput: React.FC<FormInputProps> = ({
                 </span>
                 {helpText && (
                     <span
-                        className="label-text-alt tooltip tooltip-left cursor-help"
+                        className="label-text-alt tooltip tooltip-left cursor-help flex items-center"
                         data-tip={helpText}
                         id={helpId}
                     >
-                        <span className="text-info">ℹ️</span>
+                        <FiInfo className="text-info w-4 h-4" />
                     </span>
                 )}
             </label>
@@ -77,8 +81,9 @@ export const FormInput: React.FC<FormInputProps> = ({
                 disabled={disabled}
                 autoComplete={autoComplete}
                 maxLength={maxLength}
+                readOnly={readOnly}
                 className={`input input-bordered w-full ${hasError ? 'input-error' : ''
-                    } ${disabled ? 'input-disabled' : ''}`}
+                    } ${disabled || readOnly ? 'input-disabled' : ''}`}
                 aria-invalid={hasError ? 'true' : 'false'}
                 aria-describedby={`${hasError ? errorId : ''} ${helpText ? helpId : ''}`.trim()}
                 aria-required={required}
@@ -86,7 +91,7 @@ export const FormInput: React.FC<FormInputProps> = ({
             {hasError && (
                 <label className="label">
                     <span id={errorId} className="label-text-alt text-error flex items-center gap-1">
-                        <span>⚠️</span>
+                        <FiAlertCircle className="w-4 h-4" />
                         <span>{error}</span>
                     </span>
                 </label>

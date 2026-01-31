@@ -4,8 +4,8 @@
  */
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { collection, getDocs, query, where } from 'firebase/firestore'
-import { db } from '../../services/firebase'
+import { getProgrammers } from '../../services/programmers'
+
 
 const AdminDashboard = () => {
   const [programmersCount, setProgrammersCount] = useState<number>(0)
@@ -15,21 +15,15 @@ const AdminDashboard = () => {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        // Contar programadores
-        const programmersQuery = query(
-          collection(db, 'users'),
-          where('role', '==', 'programmer')
-        )
-        const programmersSnap = await getDocs(programmersQuery)
-        setProgrammersCount(programmersSnap.size)
+        // Contar programadores usando REST API
+        const programmers = await getProgrammers()
+        setProgrammersCount(programmers.length)
 
         // Contar asesorías pendientes
-        const advisoriesQuery = query(
-          collection(db, 'advisories'),
-          where('status', '==', 'pendiente')
-        )
-        const advisoriesSnap = await getDocs(advisoriesQuery)
-        setPendingAdvisories(advisoriesSnap.size)
+        // TODO: Implementar endpoint en backend para contar asesorías pendientes
+        // Por ahora lo dejamos en 0 o simulamos
+        setPendingAdvisories(0)
+
       } catch (error) {
         console.error('Error loading stats:', error)
       } finally {
@@ -42,7 +36,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-4">
-      <div className="stats shadow">
+      <div className="stats shadow w-full">
         <div className="stat">
           <div className="stat-title">Programadores</div>
           <div className="stat-value">{loading ? '...' : programmersCount}</div>
@@ -67,6 +61,18 @@ const AdminDashboard = () => {
               <Link className="btn btn-primary" to="/admin/programadores">
                 Abrir gestión
               </Link>
+            </div>
+          </div>
+        </div>
+
+        <div className="card bg-base-100 shadow-md">
+          <div className="card-body">
+            <h2 className="card-title">Información del Sistema</h2>
+            <div className="space-y-2 text-sm">
+              <p><strong>Backend:</strong> Spring Boot REST API</p>
+              <p><strong>Frontend:</strong> React + TypeScript</p>
+              <p><strong>Autenticación:</strong> JWT</p>
+              <p><strong>Estado:</strong> <span className="badge badge-success">Operativo</span></p>
             </div>
           </div>
         </div>
