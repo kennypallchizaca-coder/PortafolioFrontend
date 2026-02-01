@@ -1,99 +1,201 @@
-# INFORME DEL PROYECTO – PORTAFOLIO ADMINISTRATIVO
+# LEXISWARE - Portafolio Profesional
 
-![alt text](imagenes/image0.png)
+![Banner del Proyecto](imagenes/image0.png)
 
-## 2. Integrantes
-- **Alex Guaman** – [https://github.com/kennypallchizaca-coder](https://github.com/kennypallchizaca-coder)
-- **Daniel Guanga** – [https://github.com/Pangust-code](https://github.com/Pangust-code)
-- **Repositorio principal:** [LEXISWARE - Portafolio Profesional](https://github.com/kennypallchizaca-coder/PORTAFOLIO)
+> **Plataforma Integral de Gestión de Portafolios y Asesorías Técnicas**
 
-## 3. Tecnologías Utilizadas
-![React](https://img.shields.io/badge/React-19.0.0-blue.svg) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg) ![Vite](https://img.shields.io/badge/Vite-7.2.0-646CFF.svg) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC.svg) ![Spring Boot](https://img.shields.io/badge/SpringBoot-3.4.x-6DB33F.svg) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.x-336791.svg) ![JWT](https://img.shields.io/badge/JWT-JSON%20Web%20Token-black.svg)
+## Descripción del Proyecto
 
-- **Frontend:** React 19 + TypeScript, Vite, React Router v7, TailwindCSS con DaisyUI, Framer Motion.
-- **Backend:** Spring Boot 3.x with Java 17+, Spring Security + JWT, Spring Data JPA.
-- **Base de Datos:** PostgreSQL para persistencia relacional.
-- **Notificaciones:** EmailJS para envío de correos y Spring Mail integrado.
-- **Almacenamiento:** Integración con Cloudinary para gestión de imágenes.
+**LEXISWARE** es una aplicación web de tipo **Single Page Application (SPA)** desarrollada para profesionalizar la presencia digital de los desarrolladores de software. Su objetivo principal es centralizar la exhibición de proyectos técnicos y facilitar la conexión profesional a través de asesorías técnicas.
 
-## 4. Descripción del Proyecto
-LEXISWARE es una plataforma web profesional para gestionar portafolios de programadores y solicitudes de asesoría técnica. La aplicación utiliza una arquitectura moderna de Frontend (SPA) y Backend (REST API) con control de acceso basado en roles (RBAC). Permite a los programadores mostrar su trabajo, gestionar su disponibilidad y atender solicitudes de mentoría, mientras que los administradores supervisan la integridad de la plataforma.
+El sistema resuelve la necesidad de los programadores de tener un espacio unificado para su marca personal, y brinda a los reclutadores o clientes una plataforma confiable para validar habilidades técnicas.
 
-## 5. Roles y Funcionalidades
-### Administrador
-- Gestión centralizada de usuarios y asignación de roles.
-- Supervisión de solicitudes de asesoría global.
-- Administración del catálogo de proyectos y categorías.
-- Dashboard de métricas y control académico.
+### Casos de Uso y Funcionalidades
+*   **Perfil Público de Programador:** Exhibición de biografía, habilidades técnicas, enlaces a redes y portafolio de proyectos.
+*   **Gestión de Asesorías:** Sistema completo para que usuarios soliciten mentorías, con flujo de aprobación/rechazo por parte del programador.
+*   **Panel Administrativo:** Control total sobre los usuarios registrados, validación de proyectos subidos y monitoreo de la actividad de la plataforma.
+*   **Seguridad:** Control de acceso basado en roles (RBAC) para Admin y Programador.
 
-### Programador
-- Personalización de perfil profesional y enlaces sociales.
-- Gestión de portafolio y proyectos individuales.
-- Configuración de horarios de disponibilidad para asesorías.
-- Bandeja de entrada para gestionar solicitudes (Aprobar/Rechazar/Responder).
+---
 
-### Usuario General (Visitante)
-- Exploración pública de portafolios y proyectos.
-- Creación de solicitudes de asesoría sin necesidad de registro.
-- Seguimiento de estado de solicitudes vía Email.
+## Requisitos del Sistema
 
-## 6. Módulos del Sistema
-- **Landing Page:** Presentación profesional con acceso a proyectos destacados.
-- **Directorio de Programadores:** Visualización pública de talentos y sus portafolios.
-- **Panel de Control (Admin/Programador):** Interfaces protegidas mediante JWT para gestión de datos.
-- **Editor de Perfil y Portafolio:** Herramientas para el mantenimiento de la marca personal del programador.
-- **Sistema de Asesorías:** Flujo completo desde la solicitud hasta la resolución con notificaciones.
+Para garantizar el correcto funcionamiento del entorno de desarrollo, asegúrese de cumplir con:
 
-## 7. Flujos Principales
-1. **Acceso y Autenticación:** Los usuarios acceden mediante Google Auth o credenciales, recibiendo un JWT que autoriza sus peticiones a la API.
-2. **Postulación de Asesoría:** Un visitante solicita apoyo; el sistema registra la petición en la BD relacional y notifica al programador.
-3. **Gestión de Proyectos:** Los programadores cargan sus logros técnicos, los cuales se almacenan en PostgreSQL con imágenes optimizadas en la nube.
-4. **Interacción Admin:** El administrador valida que los perfiles y proyectos cumplan con los estándares definidos.
+*   **Sistema Operativo:** Windows 10/11, macOS, o Linux.
+*   **Node.js:** Versión 18.0.0 (LTS) o superior.
+*   **Gestor de Paquetes:** npm (v9+ recommended), pnpm o yarn.
+*   **Backend:** Instancia activa del servidor Spring Boot LEXISWARE (Local o Remoto).
+*   **Navegador:** Chrome, Firefox, Edge o Safari (versiones recientes).
 
-## 8. Aspectos Técnicos Destacados
-### Consumo de API REST (Axios)
-```ts
-// src/services/api.ts
-const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
-    headers: { 'Content-Type': 'application/json' }
-})
+---
 
-// Inyección automática de JWT
-apiClient.interceptors.request.use(config => {
-    const token = localStorage.getItem('auth_token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-})
+## Instalación y Ejecución
+
+Siga estos pasos detallados para configurar el proyecto localmente:
+
+### 1. Obtención del Código Fuente
+Clone el repositorio utilizando Git y navegue al directorio del proyecto:
+```bash
+git clone https://github.com/kennypallchizaca-coder/PORTAFOLIO.git
+cd PORTAFOLIO
 ```
 
-### Gestión de Proyectos (Backend integration)
-```ts
-// src/services/projects.ts
-export const getProjectsByOwner = async (ownerId: string): Promise<Project[]> => {
-    const response = await apiClient.get(`/api/projects/user/${ownerId}`);
-    return response.data;
-}
+### 2. Instalación de Dependencias
+Instale las librerías necesarias definidas en `package.json`:
+```bash
+npm install
 ```
 
-## 9. Conclusión
-La migración a una arquitectura robusta con Spring Boot y PostgreSQL proporciona a LEXISWARE la escalabilidad y seguridad necesarias para un entorno profesional. La integración de JWT y el manejo eficiente de datos relacionales aseguran una experiencia de usuario fluida y confiable.
+### 3. Configuración de Entorno
+Cree un archivo `.env` en la raíz (consulte la sección **Configuración**).
 
-## 10. Anexos
+### 4. Ejecución en Desarrollo
+Inicie el servidor de desarrollo Vite con Hot Module Replacement (HMR):
+```bash
+npm run dev
+```
+Acceda a la aplicación en: `http://localhost:5173`
 
-- Link de nuestro video: https://youtu.be/HVLp-7pAvoE
-- Link en gh-pages: https://kennypallchizaca-coder.github.io/
+### 5. Construcción para Producción
+Genere los archivos optimizados para despliegue:
+```bash
+npm run build
+```
+Los archivos resultantes se ubicarán en `dist/`.
 
-![alt text](imagenes/image.png)
+---
 
-![alt text](imagenes/image-1.png)
+## Estructura del Repositorio
 
-![alt text](imagenes/image-2.png)
+La arquitectura de carpetas sigue un patrón modular y escalable:
 
-![alt text](imagenes/image-3.png)
+```text
+src/
+├── assets/             # Recursos estáticos globales (imágenes, fuentes)
+├── components/         # Bloques de construcción UI
+│   ├── ui/             # Componentes atómicos (Botones, Modales, Inputs)
+│   └── ...             # Componentes compuestos específicos
+├── context/            # Gestión de estado global (Context API)
+│   ├── AuthContext.tsx # Lógica de autenticación y sesión de usuario
+│   └── ThemeContext.tsx # Manejo de tema visual (Claro/Oscuro)
+├── layouts/            # Estructuras de página base
+│   ├── AdminLayout.tsx # Layout con sidebar para administradores
+│   └── PublicLayout.tsx # Layout con navbar para visitantes
+├── pages/              # Vistas principales (Páginas)
+│   ├── admin/          # Módulos del panel administrativo
+│   │   ├── AdminDashboard.tsx # Métricas y resumen
+│   │   ├── ProgrammersPage.tsx # Gestión de usuarios programadores
+│   │   └── ProjectsAdmin.tsx # Moderación de proyectos
+│   ├── auth/           # Vistas de autenticación (Login, Register)
+│   ├── programmer/     # Módulos del panel de programador
+│   │   ├── ProfileEditor.tsx # Edición de datos personales
+│   │   ├── PortfolioEditor.tsx # Gestión de proyectos del portafolio
+│   │   └── AdvisoryInbox.tsx # Bandeja de solicitudes de asesoría
+│   └── public/         # Vistas de acceso público
+├── services/           # Capa de comunicación con API Backend
+│   ├── api.ts          # Configuración base de Axios e interceptores
+│   ├── auth.ts         # Servicios de Login/Registro
+│   ├── programmers.ts  # Servicios de gestión de perfiles
+│   └── ...
+├── utils/              # Funciones de utilidad pura y formateadores
+├── App.tsx             # Definición de rutas y estructura de la app
+└── main.tsx            # Punto de entrada y montaje en el DOM
+```
 
-![alt text](imagenes/image-4.png)
+---
 
-![alt text](imagenes/image-5.png)
+## Arquitectura y Componentes Clave
 
-![alt text](imagenes/image-6.png)
+### Arquitectura de Software
+El proyecto utiliza una arquitectura de **Cliente Rico (Rich Client)** desacoplada. EL Frontend gestiona la presentación, el enrutamiento y la lógica de interfaz, comunicándose con el Backend exclusivamente a través de una API REST.
+
+### Componentes Principales
+
+#### 1. Capa de Servicios (`src/services/api.ts`)
+Es el núcleo de la comunicación. Configura una instancia singleton de `axios` que incluye:
+*   **Base URL:** Inyectada dinámicamente desde variables de entorno.
+*   **Request Interceptor:** Inyecta automáticamente el token JWT (`Authorization: Bearer ...`) en cada petición si el usuario está autenticado.
+*   **Response Interceptor:** Captura errores globales, como el código 401, para cerrar sesión automáticamente.
+
+#### 2. Contexto de Autenticación (`AuthContext.tsx`)
+Mantiene el estado de la sesión del usuario. Provee métodos globales como `login()`, `logout()` y `user` para que cualquier componente sepa si hay una sesión activa y qué rol tiene el usuario.
+
+#### 3. Módulos de Administración (`src/pages/admin/`)
+*   **ProgrammersPage.tsx:** Tabla compleja que permite listar, editar o desactivar cuentas de programadores.
+*   **ProjectsAdmin.tsx:** Interfaz de auditoría para revisar los proyectos subidos antes de que sean visibles públicamente.
+
+#### 4. Módulos de Programador (`src/pages/programmer/`)
+*   **ProfileEditor.tsx:** Formulario extenso con validaciones para actualizar información profesional.
+*   **AdvisoryInbox.tsx:** Panel de gestión de solicitudes, permitiendo cambiar estados (Pendiente, Aprobada, Rechazada).
+
+---
+
+## Configuración
+
+La aplicación se configura mediante variables de entorno. Es obligatorio definir estas variables para la conexión con el Backend.
+
+| Variable | Descripción | Valor Ejemplo | Requerido |
+| :--- | :--- | :--- | :---: |
+| `VITE_API_BASE_URL` | Endpoint raíz del servidor Backend. | `https://spring-proyecto.onrender.com` | Sí |
+| `VITE_API_TIMEOUT` | Tiempo máximo de espera para peticiones (ms). | `120000` | No |
+
+**Nota:** Utilice `.env.local` para sus configuraciones locales para evitar subirlas al repositorio.
+
+---
+
+## Dependencias
+
+Las principales librerías que potencian LEXISWARE son:
+
+*   **React 19 & React DOM:** Base del framework para construcción de interfaces reactivas.
+*   **Vite:** Herramienta de construcción (bundler) de última generación, superior a Webpack en velocidad.
+*   **TypeScript:** Superset de JavaScript que añade tipado estático, reduciendo errores en tiempo de ejecución.
+*   **React Router Dom (v7):** Manejo de navegación SPA (sin recarga de página).
+*   **Axios:** Cliente HTTP basado en promesas, usado por su facilidad para interceptores.
+*   **TailwindCSS & DaisyUI:** Sistema de diseño. Tailwind ofrece utilidades de bajo nivel, y DaisyUI componentes semánticos (botones, cards) pre-estilizados.
+*   **Framer Motion:** Biblioteca de animaciones declarativas para mejorar la experiencia de usuario (UX).
+*   **EmailJS:** Solución Serverless para el envío de notificaciones por correo desde el frontend.
+
+---
+
+## Pruebas
+
+Actualmente el proyecto está configurado para pruebas manuales intensivas.
+
+### Pasos para Pruebas Manuales:
+1.  **Smoke Test:** Inicie la aplicación y verifique que la Landing Page carga sin errores de consola.
+2.  **Auth Flow:** Intente registrar un usuario nuevo y loguése. Verifique que el token JWT se guarde en `localStorage`.
+3.  **CRUD Test:** Como programador, cree un proyecto nuevo. Verifique que aparece en su perfil.
+4.  **Role Test:** Intente acceder a `/admin` con un usuario programador. Debería ser redirigido o ver un error de permisos.
+
+*(Nota: La implementación de suites automatizadas con Vitest o Jest es una mejora planificada).*
+
+---
+
+## Convenciones de Desarrollo
+
+El proyecto sigue estándares estrictos para mantener la calidad del código:
+
+*   **Linting:** Se utiliza ESLint con configuración `react-hooks` y `react-refresh` para asegurar buenas prácticas de React.
+*   **Estructura de Archivos:** PascalCase para componentes (`MiComponente.tsx`) y camelCase para utilidades/hooks (`useAuth.ts`).
+*   **Imports:** Se prefieren imports absolutos o organizados por capas (primero librerías, luego componentes propios).
+*   **Commits:** Se recomienda el uso de Conventional Commits (feat, fix, docs, style).
+
+---
+
+## Problemas Conocidos y Limitaciones
+
+*   **Dependencia Backend:** La aplicación no funcionará correctamente si la variable `VITE_API_BASE_URL` no apunta a un servidor activo.
+*   **Persistencia de Imágenes:** Actualmente depende de servicios externos configurados en el Backend; fallos en la red pueden afectar la carga de medios.
+
+---
+
+## Créditos
+
+Equipo de Desarrollo - LEXISWARE
+
+*   **Alex Guaman** – [GitHub: kennypallchizaca-coder](https://github.com/kennypallchizaca-coder)
+*   **Daniel Guanga** – [GitHub: Pangust-code](https://github.com/Pangust-code)
+
+Repositorio Gestionado por: **Antigravity**
