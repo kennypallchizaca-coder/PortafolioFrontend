@@ -198,4 +198,3 @@ Equipo de Desarrollo - LEXISWARE
 *   **Alex Guaman** – [GitHub: kennypallchizaca-coder](https://github.com/kennypallchizaca-coder)
 *   **Daniel Guanga** – [GitHub: Pangust-code](https://github.com/Pangust-code)
 
-Repositorio Gestionado por: **Antigravity**
