@@ -58,7 +58,7 @@ export const FormInput: React.FC<FormInputProps> = ({
         <div className="form-control">
             <label className="label" htmlFor={inputId}>
                 <span className="label-text">
-                    {label} {required && <span className="text-error font-bold">*</span>}
+                    {label} {required && !value && <span className="text-error font-bold">*</span>}
                 </span>
                 {helpText && (
                     <span

@@ -1,6 +1,4 @@
-/**
- * Listado público de proyectos
- */
+//este es un comentario ejemplo
 import { useEffect, useState } from 'react'
 import { getAllProjects, type Project } from '../../services/projects'
 import { FiGithub, FiExternalLink } from 'react-icons/fi'

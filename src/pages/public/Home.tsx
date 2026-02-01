@@ -1,7 +1,4 @@
-/**
- * Pagina de inicio publica.
- * Optimizacion: reduce animaciones si el usuario prefiere menos movimiento y usa lazy loading en la ilustracion.
- */
+//este es un comentario ejemplo
 
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -23,9 +20,7 @@ const Home = () => {
     }
   }
 
-  // ------------------------------
-  // EFECTO DE TEXTO DINÁMICO
-  // ------------------------------
+  //este es un comentario ejemplo
   const frases = [
     "Si puedes imaginarlo, puedes programarlo",
     "Innovación que impulsa tu futuro",
@@ -43,7 +38,7 @@ const Home = () => {
       const timer = setTimeout(() => {
         setTexto((prev) => prev + current[pos])
         setPos(pos + 1)
-      }, 80) // Velocidad un poco más rápida
+      }, 80) //este es un comentario ejemplo
       return () => clearTimeout(timer)
     } else {
       const timer = setTimeout(() => {
@@ -60,7 +55,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-transparent relative">
 
-      {/* Galaxy Background - Ultra Optimizado para 60 FPS */}
+      {/* este es un comentario ejemplo */}
       <GalaxyComponent
         starCount1={200}
         starCount2={60}
@@ -78,7 +73,7 @@ const Home = () => {
       >
         <div className="grid max-w-7xl mx-auto items-center gap-12 py-16 px-6 md:px-12 lg:px-20 lg:grid-cols-2">
 
-          {/* Contenido izquierdo */}
+          {/* este es un comentario ejemplo */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -87,7 +82,7 @@ const Home = () => {
           >
             <div className="space-y-6">
 
-              {/* H1 con TEXTO DINÁMICO */}
+              {/* este es un comentario ejemplo */}
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -101,7 +96,7 @@ const Home = () => {
 
 
 
-              {/* Descripción */}
+              {/* este es un comentario ejemplo */}
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -113,7 +108,7 @@ const Home = () => {
               </motion.p>
             </div>
 
-            {/* Botones */}
+            {/* este es un comentario ejemplo */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -136,7 +131,7 @@ const Home = () => {
               </Link>
             </motion.div>
 
-            {/* Métricas */}
+            {/* este es un comentario ejemplo */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -161,7 +156,7 @@ const Home = () => {
             </motion.div>
           </motion.div>
 
-          {/* Ilustración derecha con animaciones */}
+          {/* este es un comentario ejemplo */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -170,7 +165,7 @@ const Home = () => {
           >
             <div className="relative aspect-square w-full max-w-md mx-auto lg:max-w-full">
 
-              {/* Imagen principal - Sin animación pesada */}
+              {/* este es un comentario ejemplo */}
               <motion.div
                 animate={allowMotion ? { y: [0, -15, 0] } : undefined}
                 transition={allowMotion ? { duration: 8, repeat: Infinity, ease: 'linear' } : undefined}
@@ -186,7 +181,7 @@ const Home = () => {
                 />
               </motion.div>
 
-              {/* BURBUJAS - Solo 2 con animaciones simples */}
+              {/* este es un comentario ejemplo */}
 
               <motion.div
                 animate={allowMotion ? { y: [0, -20, 0] } : undefined}
@@ -211,7 +206,7 @@ const Home = () => {
 
         </div>
 
-        {/* Indicador scroll */}
+        {/* este es un comentario ejemplo */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -241,7 +236,7 @@ const Home = () => {
             className="text-center space-y-12"
           >
 
-            {/* Title */}
+            {/* este es un comentario ejemplo */}
             <div className="space-y-8">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -277,7 +272,7 @@ const Home = () => {
               que impulsan el crecimiento de tu negocio.
             </motion.p>
 
-            {/* Features Grid */}
+            {/* este es un comentario ejemplo */}
             <div className="grid md:grid-cols-3 gap-12 pt-8">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -337,8 +332,7 @@ const Home = () => {
               </motion.div>
             </div>
 
-            {/* CTA Buttons */}
-            {/* Solo visible para no autenticados o externos, oculto para programmers/admins */}
+            {/* este es un comentario ejemplo */}
             {(!isAuthenticated || ['role_external', 'external', 'role_user', 'user'].includes((role as string)?.toLowerCase() || '')) && (
               <div className="flex flex-wrap justify-center gap-4 pt-8">
                 <Link

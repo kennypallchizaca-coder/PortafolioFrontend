@@ -72,7 +72,7 @@ const MyAdvisoryRequests = () => {
             <FiXCircle /> Rechazada
           </div>
         )
-      default:
+      default: // PENDING
         return (
           <div className="badge badge-warning gap-2 p-3 text-white">
             <FiClock /> Pendiente

@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { getProgrammers, type ProgrammerProfile } from '../../services/programmers'
 import { Link } from 'react-router-dom'
-import { FiGithub, FiInstagram, FiCode, FiUsers, FiRefreshCw, FiMail, FiEye } from 'react-icons/fi'
+import { FiGithub, FiInstagram, FiCode, FiUsers, FiRefreshCw, FiMail, FiEye, FiSearch } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
@@ -253,9 +253,9 @@ const ProgrammerDirectory = () => {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center rounded-3xl bg-base-200 p-12 text-center"
           >
-            <div className="mb-4 text-6xl">🔍</div>
+            <div className="mb-4 text-6xl"><FiSearch /></div>
             <h3 className="mb-2 text-xl font-semibold">No hay desarrolladores aún</h3>
-            <p className="text-base-content/70">Los programadores aparecerán aquí una vez registrados</p>
+            <p className="text-base-content/70">Los desarrolladores aparecerán aquí una vez registrados</p>
           </motion.div>
         )}
       </div>

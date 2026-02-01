@@ -19,6 +19,7 @@ import {
   FiMessageSquare,
   FiUser
 } from 'react-icons/fi'
+import { DAYS_MAP, parseProgrammerSchedule } from '../../utils/schedule'
 
 const initialForm = {
   programmerId: '',
@@ -70,11 +71,50 @@ const AdvisoryRequest = () => {
     note: [(val: string) => val && FormUtils.maxLength(val, 500)],
   }
 
+  const [scheduleMap, setScheduleMap] = useState<{ [key: string]: string[] }>({})
+  const [availableDays, setAvailableDays] = useState<string[]>([])
+
+  // cargar programadores disponibles
   useEffect(() => {
     getProgrammers().then(data => {
       setProgrammers(data.filter(p => p.available))
     })
   }, [])
+
+  // procesar horarios cuando cambia el experto
+  useEffect(() => {
+    if (!selectedProgrammer || !selectedProgrammer.schedule) {
+      setScheduleMap({})
+      setAvailableDays([])
+      setAvailableTimes([])
+      return
+    }
+
+    const { map, daysFound } = parseProgrammerSchedule(selectedProgrammer.schedule)
+    setScheduleMap(map)
+    setAvailableDays(daysFound)
+  }, [selectedProgrammer])
+
+  // actualizar horas disponibles cuando cambia la fecha
+  useEffect(() => {
+    if (!form.date) {
+      setAvailableTimes([])
+      return
+    }
+
+    const [y, m, d] = form.date.split('-').map(Number)
+    const date = new Date(y, m - 1, d)
+    const dayName = DAYS_MAP[date.getDay()]
+
+    // obtener slots del día seleccionado (o vacio si no hay)
+    // nota: parseProgrammerSchedule ya separa genericos en map['Generic'] si hiciera falta,
+    // pero aqui asumimos que el usuario selecciona un día valido.
+    // Si quisieramos soportar horarios genericos siempre, los concatenariamos aqui.
+    const specificMoves = scheduleMap[dayName] || []
+    const all = Array.from(new Set(specificMoves)).sort()
+
+    setAvailableTimes(all)
+  }, [form.date, scheduleMap])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -90,10 +130,8 @@ const AdvisoryRequest = () => {
 
     if (name === 'programmerId') {
       const programmer = programmers.find(p => p.id === value)
-      if (programmer) {
-        setSelectedProgrammer(programmer)
-        setAvailableTimes(programmer.schedule || [])
-      }
+      setSelectedProgrammer(programmer || null)
+      // resetear fecha y hora al cambiar experto
       setForm((prev) => ({ ...prev, date: '', time: '' }))
       setTouched(prev => ({ ...prev, date: false, time: false }))
       setFormErrors(prev => ({ ...prev, date: '', time: '' }))
@@ -152,11 +190,9 @@ const AdvisoryRequest = () => {
       }))
       setFormErrors({})
       setTouched({})
-      if (!user) { // solo reiniciar usuario si no está logueado
-        // la lógica anterior maneja el reinicio parcial correctamente
-      }
       setAvailableTimes([])
       setSelectedProgrammer(null)
+      // scheduleMap se resetea por el useEffect de selectedProgrammer null
     } catch (err) {
       console.error('Error al enviar solicitud:', err)
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
@@ -256,6 +292,11 @@ const AdvisoryRequest = () => {
                 <span className="label-text flex items-center gap-2">
                   <FiCalendar /> Fecha Preferida
                 </span>
+                {availableDays.length > 0 && (
+                  <span className="label-text-alt text-primary font-semibold">
+                    Atiende: {availableDays.join(', ')}
+                  </span>
+                )}
               </label>
               <FormInput
                 label=""
@@ -268,6 +309,7 @@ const AdvisoryRequest = () => {
                 touched={touched.date}
                 required
                 disabled={!form.programmerId}
+                helpText={form.date && availableTimes.length === 0 && selectedProgrammer ? 'El experto no tiene horarios para este día.' : undefined}
               />
             </div>
 
@@ -323,7 +365,7 @@ const AdvisoryRequest = () => {
             <button
               className="btn btn-primary btn-lg shadow-lg gap-3"
               type="submit"
-              disabled={loading || FormUtils.hasErrors(formErrors)}
+              disabled={loading}
             >
               {loading ? (
                 <>

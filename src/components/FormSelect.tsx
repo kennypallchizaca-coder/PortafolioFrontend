@@ -40,11 +40,14 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     const errorId = `${name}-error`
     const helpId = `${name}-help`
 
+    // Solo mostrar asterisco si el campo está vacío y es requerido
+    const showAsterisk = required && !value
+
     return (
         <div className="form-control">
             <label className="label" htmlFor={selectId}>
                 <span className="label-text">
-                    {label} {required && <span className="text-error font-bold">*</span>}
+                    {label} {showAsterisk && <span className="text-error font-bold">*</span>}
                 </span>
                 {helpText && (
                     <span

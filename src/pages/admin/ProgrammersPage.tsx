@@ -1,13 +1,15 @@
-/**
- * Gestión de programadores (Admin).
- * Prácticas: Formularios controlados con validación completa y arrays dinámicos, REST API.
- */
+//este es un comentario ejemplo
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { getProgrammers, upsertProgrammer, deleteProgrammer, type ProgrammerProfile } from '../../services/programmers'
 import { uploadAvatar } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
-import { FiPlus, FiTrash2, FiEdit2 } from 'react-icons/fi'
+import { FiPlus, FiTrash2, FiEdit2, FiGithub, FiInstagram } from 'react-icons/fi'
+import { FaWhatsapp } from 'react-icons/fa'
 
+
+import { DAYS, TIME_SLOTS } from '../../utils/schedule'
+
+//este es un comentario ejemplo
 const initialForm = {
   displayName: '',
   email: '',
@@ -33,9 +35,13 @@ const ProgrammersPage = () => {
 
   const [skills, setSkills] = useState<string[]>(['JavaScript', 'React'])
   const [newSkill, setNewSkill] = useState('')
-  const [times, setTimes] = useState<string[]>(['09:00', '11:00'])
-  const [newTime, setNewTime] = useState('')
+  //este es un comentario ejemplo
+  const [times, setTimes] = useState<string[]>([])
+  const [selectedDay, setSelectedDay] = useState('Lunes')
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('17:00')
 
+  //este es un comentario ejemplo
   const validationRules = {
     displayName: [
       (val: string) => FormUtils.required(val),
@@ -63,6 +69,7 @@ const ProgrammersPage = () => {
     ],
   }
 
+  //este es un comentario ejemplo
   const loadProgrammers = async () => {
     try {
       const data = await getProgrammers()
@@ -168,7 +175,7 @@ const ProgrammersPage = () => {
         email: form.email,
         specialty: form.specialty,
         bio: form.bio,
-        role: 'ROLE_PROGRAMMER',
+        role: 'PROGRAMMER',
         photoURL,
         skills: skills,
         socials,
@@ -180,8 +187,10 @@ const ProgrammersPage = () => {
       setForm(initialForm)
       setSkills(['JavaScript', 'React'])
       setNewSkill('')
-      setTimes(['09:00', '11:00'])
-      setNewTime('')
+      setTimes([])
+      setSelectedDay('Lunes')
+      setStartTime('09:00')
+      setEndTime('17:00')
       setPhotoFile(null)
       setPhotoPreview('')
       setFormErrors({})
@@ -208,7 +217,7 @@ const ProgrammersPage = () => {
       whatsapp: dev.socials?.whatsapp || '',
       available: dev.available ?? false,
     })
-    setTimes(dev.schedule || ['09:00', '11:00'])
+    setTimes(dev.schedule || [])
     setSkills(dev.skills || ['JavaScript', 'React'])
     setPhotoPreview(dev.photoURL || '')
     setFormErrors({})
@@ -366,49 +375,74 @@ const ProgrammersPage = () => {
               <div className="form-control">
                 <label className="label">
                   <span className="label-text font-bold">Horarios de disponibilidad *</span>
+                  <span className="label-text-alt">Ej: "Lunes 09:00 - 12:00"</span>
                 </label>
-                <div className="join mb-3">
-                  <input
-                    type="time"
-                    value={newTime}
-                    onChange={(e) => setNewTime(e.target.value)}
-                    className="input input-bordered join-item"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (newTime && !times.includes(newTime)) {
-                        setTimes([...times, newTime])
-                        setNewTime('')
-                      }
-                    }}
-                    className="btn btn-primary join-item"
-                  >
-                    <FiPlus /> Agregar
-                  </button>
-                </div>
-                <div className="space-y-2">
+
+                <div className="flex flex-wrap gap-2 mb-3">
                   {times.map((time, index) => (
-                    <div key={index} className="join w-full">
-                      <input
-                        type="time"
-                        value={time}
-                        onChange={(e) => {
-                          const newTimes = [...times]
-                          newTimes[index] = e.target.value
-                          setTimes(newTimes)
-                        }}
-                        className="input input-bordered join-item flex-1"
-                      />
+                    <div key={index} className="badge badge-secondary gap-2 p-3">
+                      {time}
                       <button
                         type="button"
                         onClick={() => setTimes(times.filter((_, i) => i !== index))}
-                        className="btn btn-error join-item"
+                        className="btn btn-ghost btn-xs btn-circle text-white"
                       >
                         <FiTrash2 />
                       </button>
                     </div>
                   ))}
+                </div>
+
+                <div className="flex flex-wrap items-end gap-2 bg-base-200 p-3 rounded-lg border border-base-300">
+                  <div className="form-control flex-1 min-w-[120px]">
+                    <label className="label-text text-xs mb-1">Día</label>
+                    <select
+                      className="select select-bordered select-sm w-full"
+                      value={selectedDay}
+                      onChange={(e) => setSelectedDay(e.target.value)}
+                    >
+                      {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="form-control w-[100px]">
+                    <label className="label-text text-xs mb-1">Desde</label>
+                    <select
+                      className="select select-bordered select-sm w-full"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                    >
+                      {TIME_SLOTS.map(time => <option key={time} value={time}>{time}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="form-control w-[100px]">
+                    <label className="label-text text-xs mb-1">Hasta</label>
+                    <select
+                      className="select select-bordered select-sm w-full"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                    >
+                      {TIME_SLOTS.map(time => <option key={time} value={time}>{time}</option>)}
+                    </select>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (startTime >= endTime) {
+                        alert('La hora de fin debe ser posterior a la de inicio')
+                        return
+                      }
+                      const newSlot = `${selectedDay} ${startTime} - ${endTime}`
+                      if (!times.includes(newSlot)) {
+                        setTimes([...times, newSlot])
+                      }
+                    }}
+                    className="btn btn-accent btn-sm"
+                  >
+                    <FiPlus /> Agregar
+                  </button>
                 </div>
               </div>
             )}
@@ -562,6 +596,27 @@ const ProgrammersPage = () => {
                       </div>
                       <p className="text-xs text-base-content/60">{dev.email}</p>
                       <p className="text-sm text-base-content/70">{dev.bio}</p>
+
+                      {/* este es un comentario ejemplo */}
+                      {dev.socials && (
+                        <div className="flex gap-2 mt-2">
+                          {dev.socials.github && (
+                            <a href={dev.socials.github} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-focus">
+                              <FiGithub />
+                            </a>
+                          )}
+                          {dev.socials.instagram && (
+                            <a href={dev.socials.instagram} target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-secondary-focus">
+                              <FiInstagram />
+                            </a>
+                          )}
+                          {dev.socials.whatsapp && (
+                            <a href={dev.socials.whatsapp} target="_blank" rel="noopener noreferrer" className="text-success hover:text-success-focus">
+                              <FaWhatsapp />
+                            </a>
+                          )}
+                        </div>
+                      )}
 
                       {dev.skills && dev.skills.length > 0 && (
                         <div className="mt-2">

@@ -10,13 +10,8 @@ import { FormUtils } from '../../utils/FormUtils'
 import FormInput from '../../components/FormInput'
 import FormTextarea from '../../components/FormTextarea'
 import { FiCamera, FiSave, FiPlus, FiTrash2 } from 'react-icons/fi'
+import { DAYS, TIME_SLOTS } from '../../utils/schedule'
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
-  const hour = Math.floor(i / 2).toString().padStart(2, '0')
-  const minute = (i % 2) * 30 === 0 ? '00' : '30'
-  return `${hour}:${minute}`
-})
 
 const initialForm = {
   displayName: '',
@@ -56,10 +51,7 @@ const ProfileEditor = () => {
       (val: string) => FormUtils.minLength(val, 3),
       (val: string) => FormUtils.maxLength(val, 100),
     ],
-    email: [
-      (val: string) => FormUtils.required(val),
-      (val: string) => FormUtils.email(val),
-    ],
+    // email: NO validar - es un campo deshabilitado de solo lectura
     specialty: [
       (val: string) => FormUtils.required(val),
       (val: string) => FormUtils.minLength(val, 3),
@@ -91,6 +83,10 @@ const ProfileEditor = () => {
         setSkills(data.skills || ['JavaScript', 'React'])
         setSchedule(data.schedule || [])
         setPhotoPreview(data.photoURL || '')
+
+        // Limpiar errores y touched al cargar datos del backend
+        setFormErrors({})
+        setTouched({})
       } catch (err) {
         console.error('Error cargando perfil:', err)
       }
@@ -188,6 +184,7 @@ const ProfileEditor = () => {
 
       await updateProgrammer(user.id, {
         displayName: form.displayName,
+        email: form.email, // Incluir email para el backend
         specialty: form.specialty,
         bio: form.bio,
         skills: skills,
@@ -267,7 +264,6 @@ const ProfileEditor = () => {
               onBlur={() => handleBlur('email')}
               error={formErrors.email}
               touched={touched.email}
-              required
               placeholder={user?.email || "correo@ejemplo.com"}
               autoComplete="email"
               disabled

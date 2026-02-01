@@ -67,7 +67,11 @@ const LoginPage = () => {
       await login(email, password)
     } catch (err: any) {
       console.error('Error en login:', err)
-      setError(err.response?.data?.message || err.message || 'Credenciales incorrectas. Verifica tu email y contraseña.')
+      if (err.response?.status === 401) {
+        setError('¡Advertencia! Credenciales incorrectas o cuenta inexistente')
+      } else {
+        setError(err.response?.data?.message || err.message || 'Error al intentar iniciar sesión. Intenta de nuevo.')
+      }
     } finally {
       setLoading(false)
     }
@@ -132,15 +136,15 @@ const LoginPage = () => {
               </p>
             </div>
 
-            {/* Mensaje de error */}
+            {/* Mensaje de error/advertencia */}
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="alert alert-error"
+                className={`alert ${error.includes('Advertencia') ? 'alert-warning' : 'alert-error'} shadow-md`}
               >
                 <FiAlertCircle className="h-5 w-5 shrink-0" />
-                <span className="text-sm">{error}</span>
+                <span className="text-sm font-medium">{error}</span>
               </motion.div>
             )}
 

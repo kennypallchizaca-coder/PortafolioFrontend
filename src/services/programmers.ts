@@ -32,6 +32,7 @@ export const getProgrammers = async (): Promise<ProgrammerProfile[]> => {
     // mapear campos del backend a formato frontend
     return response.data.map((user: any) => ({
         ...user,
+        id: user.uid || user.id, // asegurar que id esté disponible
         socials: {
             github: user.github,
             instagram: user.instagram,
@@ -48,6 +49,7 @@ export const getProgrammer = async (id: string): Promise<ProgrammerProfile> => {
     // mapear campos del backend a formato frontend
     return {
         ...response.data,
+        id: response.data.uid || response.data.id, // asegurar que id esté disponible
         socials: {
             github: response.data.github,
             instagram: response.data.instagram,
@@ -57,17 +59,36 @@ export const getProgrammer = async (id: string): Promise<ProgrammerProfile> => {
 }
 
 /**
- * Crear o actualizar un programador
+ * Crea o actualiza un programador.
+ * Transforma el objeto socials al formato que espera el backend.
  */
 export const upsertProgrammer = async (
     id: string,
     data: Partial<ProgrammerProfile>
 ): Promise<ProgrammerProfile> => {
-    // el backend usa POST /api/users para crear o actualizar
-    // fusionamos el ID en el objeto data
-    const payload = { ...data, uid: id, id: id }
-    const response = await apiClient.post<ProgrammerProfile>('/api/users', payload)
-    return response.data
+    // Preparar el payload aplanando los campos sociales
+    const payload: any = { ...data, uid: id, id: id }
+
+    // El backend espera campos planos (github, instagram, etc)
+    if (data.socials) {
+        payload.github = data.socials.github
+        payload.instagram = data.socials.instagram
+        payload.whatsapp = data.socials.whatsapp
+        delete payload.socials
+    }
+
+    const response = await apiClient.post<any>('/api/users', payload)
+
+    // Re-mapear la respuesta a la estructura de la aplicación (con objeto socials)
+    return {
+        ...response.data,
+        id: response.data.uid || response.data.id,
+        socials: {
+            github: response.data.github,
+            instagram: response.data.instagram,
+            whatsapp: response.data.whatsapp
+        }
+    }
 }
 
 /**

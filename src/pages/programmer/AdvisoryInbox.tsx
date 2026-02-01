@@ -132,7 +132,7 @@ const AdvisoryInbox = () => {
         ))}
         {!filteredItems.length && !loading && (
           <div className="alert alert-info text-sm">
-            No hay solicitudes {filter === 'todas' ? '' : filter === 'pending' ? 'pendientes' : `${filter}s`}.
+            No hay solicitudes {filter === 'todas' ? '' : filter === 'pending' ? 'pendientes' : filter === 'approved' ? 'aprobadas' : 'rechazadas'}.
           </div>
         )}
       </div>

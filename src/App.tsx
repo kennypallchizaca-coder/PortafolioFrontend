@@ -1,13 +1,4 @@
-/**
- * Enrutador principal de la aplicación con React Router v6.
- * 
- * Define rutas públicas (/, /proyectos, /programadores, /login) y protegidas
- * (/admin/*, /panel/*) con guards de autenticación y rol.
- * 
- * @module App
- * @author LEXISWARE - Proyecto Académico PPW
- * @description Layouts: PublicLayout (navbar+footer) y DashboardLayout (sidebar)
- */
+//este es un comentario ejemplo
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -49,7 +40,7 @@ function App() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        {/* Practica: Rutas publicas con layout publico */}
+        {/* este es un comentario ejemplo */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/proyectos" element={<Projects />} />
@@ -60,13 +51,13 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
         </Route>
 
-        {/* Practica: Rutas protegidas + guard de rol */}
+        {/* este es un comentario ejemplo */}
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['ROLE_ADMIN']}>
-                <DashboardLayout role="ROLE_ADMIN" />
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <DashboardLayout role="ADMIN" />
               </RoleGuard>
             </ProtectedRoute>
           }
@@ -80,8 +71,8 @@ function App() {
           path="/panel"
           element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['ROLE_PROGRAMMER']}>
-                <DashboardLayout role="ROLE_PROGRAMMER" />
+              <RoleGuard allowedRoles={['PROGRAMMER']}>
+                <DashboardLayout role="PROGRAMMER" />
               </RoleGuard>
             </ProtectedRoute>
           }
@@ -93,7 +84,7 @@ function App() {
           <Route path="asesorias" element={<AdvisoryInbox />} />
         </Route>
 
-        {/* Redireccion fallback */}
+        {/* este es un comentario ejemplo */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

@@ -73,7 +73,7 @@ export const updateAdvisoryStatus = async (
     // el backend usa PATCH /api/advisories/{id}/status
     // el cuerpo espera "status"
     const response = await apiClient.patch<Advisory>(`/api/advisories/${id}/status`, {
-        status: status.toUpperCase(), // convertir enum a mayúsculas para backend
+        status,
         responseMessage,
     })
     return response.data

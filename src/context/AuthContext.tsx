@@ -36,9 +36,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const verifiedUser = await authService.verifyToken()
         if (verifiedUser) {
+          console.log('DEBUG: Auth initialized. Role from server:', verifiedUser.role);
           setUser(verifiedUser)
           setRole(verifiedUser.role)
         } else {
+          console.log('DEBUG: No verified user found.');
           setUser(null)
           setRole(null)
         }

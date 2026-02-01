@@ -8,101 +8,76 @@
 - **Repositorio principal:** [LEXISWARE - Portafolio Profesional](https://github.com/kennypallchizaca-coder/PORTAFOLIO)
 
 ## 3. Tecnologías Utilizadas
-![React](https://img.shields.io/badge/React-19.0.0-blue.svg) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg) ![Vite](https://img.shields.io/badge/Vite-7.2.0-646CFF.svg) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC.svg) ![Firebase](https://img.shields.io/badge/Firebase-10.x-orange.svg) ![EmailJS](https://img.shields.io/badge/EmailJS-automatizado-success.svg)
+![React](https://img.shields.io/badge/React-19.0.0-blue.svg) ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg) ![Vite](https://img.shields.io/badge/Vite-7.2.0-646CFF.svg) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.x-38B2AC.svg) ![Spring Boot](https://img.shields.io/badge/SpringBoot-3.4.x-6DB33F.svg) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.x-336791.svg) ![JWT](https://img.shields.io/badge/JWT-JSON%20Web%20Token-black.svg)
 
-- **Frontend:** React 19 + TypeScript, Vite, React Router v6, TailwindCSS con DaisyUI, Framer Motion.
-- **Backend serverless:** Firebase Authentication, Cloud Firestore, Firebase Hosting.
-- **Notificaciones:** EmailJS para envío automático de correos.
-- **Tooling:** pnpm, ESLint, PostCSS, TypeScript.
+- **Frontend:** React 19 + TypeScript, Vite, React Router v7, TailwindCSS con DaisyUI, Framer Motion.
+- **Backend:** Spring Boot 3.x with Java 17+, Spring Security + JWT, Spring Data JPA.
+- **Base de Datos:** PostgreSQL para persistencia relacional.
+- **Notificaciones:** EmailJS para envío de correos y Spring Mail integrado.
+- **Almacenamiento:** Integración con Cloudinary para gestión de imágenes.
 
 ## 4. Descripción del Proyecto
-LEXISWARE es una plataforma web académica para gestionar portafolios profesionales y solicitudes de asesoría con control de acceso por roles. Ofrece una landing pública para explorar programadores y proyectos, paneles protegidos para administración y programación, y notificaciones por correo cuando se crean o actualizan solicitudes.
+LEXISWARE es una plataforma web profesional para gestionar portafolios de programadores y solicitudes de asesoría técnica. La aplicación utiliza una arquitectura moderna de Frontend (SPA) y Backend (REST API) con control de acceso basado en roles (RBAC). Permite a los programadores mostrar su trabajo, gestionar su disponibilidad y atender solicitudes de mentoría, mientras que los administradores supervisan la integridad de la plataforma.
 
 ## 5. Roles y Funcionalidades
 ### Administrador
-- Gestión de usuarios y roles (creación, actualización y eliminación).
-- Revisión y aprobación/rechazo de solicitudes de asesoría.
-- Administración de proyectos globales y métricas internas.
-- Acceso completo al panel administrativo.
-- Edición de módulos internos según políticas académicas.
+- Gestión centralizada de usuarios y asignación de roles.
+- Supervisión de solicitudes de asesoría global.
+- Administración del catálogo de proyectos y categorías.
+- Dashboard de métricas y control académico.
 
 ### Programador
-- Edición de perfil profesional, portafolio y proyectos académicos/laborales.
-- Mantenimiento de su bandeja de asesorías (aprobar, rechazar, responder).
-- Actualizaciones técnicas y gestión de datos propios.
-- Acceso a funcionalidades autorizadas del dashboard de programador.
+- Personalización de perfil profesional y enlaces sociales.
+- Gestión de portafolio y proyectos individuales.
+- Configuración de horarios de disponibilidad para asesorías.
+- Bandeja de entrada para gestionar solicitudes (Aprobar/Rechazar/Responder).
 
-### Usuario General
-- Creación de solicitudes de asesoría sin registro previo.
-- Visualización de portafolios y proyectos públicos.
-- Seguimiento del estado de sus solicitudes.
-- Recepción de notificaciones por correo con las respuestas.
+### Usuario General (Visitante)
+- Exploración pública de portafolios y proyectos.
+- Creación de solicitudes de asesoría sin necesidad de registro.
+- Seguimiento de estado de solicitudes vía Email.
 
-## 6. Módulos y Pantallas del Sistema
-- **Landing / Página pública:** Vista principal con hero, navegación y acceso a portafolios y proyectos.
-- **Login:** Autenticación con Google mediante Firebase Auth.
-- **Dashboard Admin:** Panel con navegación lateral para métricas, usuarios, roles y solicitudes.
-- **Gestión de usuarios/roles:** Listados y formularios para alta, edición o eliminación de usuarios y roles.
-- **Gestión de proyectos:** Administración de proyectos académicos/laborales y categorías asociadas.
-- **Panel del programador:** Dashboard específico para perfil, portafolio, proyectos y asesorías.
-- **Perfil de usuario:** Edición de datos personales y enlaces de contacto del programador.
-- **Solicitudes:** Bandeja de asesorías (programador) y formulario público para crear nuevas solicitudes.
-- **Visualización pública de portafolios:** Directorio de programadores y detalle de sus proyectos.
+## 6. Módulos del Sistema
+- **Landing Page:** Presentación profesional con acceso a proyectos destacados.
+- **Directorio de Programadores:** Visualización pública de talentos y sus portafolios.
+- **Panel de Control (Admin/Programador):** Interfaces protegidas mediante JWT para gestión de datos.
+- **Editor de Perfil y Portafolio:** Herramientas para el mantenimiento de la marca personal del programador.
+- **Sistema de Asesorías:** Flujo completo desde la solicitud hasta la resolución con notificaciones.
 
-## 7. Flujos Principales del Usuario
-1. **Ingreso público:** El visitante accede a la landing y navega por el directorio de programadores y proyectos sin autenticarse.
-2. **Autenticación y enrutamiento:** Un usuario inicia sesión con Google; el guard de rutas valida el rol y redirige al panel correspondiente (admin o programador).【F:src/App.tsx】
-3. **Creación de solicitud:** Un usuario general completa el formulario de asesoría; la solicitud se registra en Firestore con estado inicial `pending` y se notifica al programador por correo.【F:src/services/firestore.ts】【F:src/services/email.ts】
-4. **Atención de solicitud (programador):** El programador revisa su bandeja, actualiza el estado (aprobada/rechazada) y el solicitante recibe un correo con la respuesta detallada.【F:src/services/firestore.ts】【F:src/services/email.ts】
-5. **Administración:** El administrador gestiona roles, usuarios y proyectos desde el dashboard, manteniendo la información publicada y las solicitudes validadas.【F:src/App.tsx】
+## 7. Flujos Principales
+1. **Acceso y Autenticación:** Los usuarios acceden mediante Google Auth o credenciales, recibiendo un JWT que autoriza sus peticiones a la API.
+2. **Postulación de Asesoría:** Un visitante solicita apoyo; el sistema registra la petición en la BD relacional y notifica al programador.
+3. **Gestión de Proyectos:** Los programadores cargan sus logros técnicos, los cuales se almacenan en PostgreSQL con imágenes optimizadas en la nube.
+4. **Interacción Admin:** El administrador valida que los perfiles y proyectos cumplan con los estándares definidos.
 
-## 8. Fragmentos Técnicos Importantes
-### Envío de correo con EmailJS
+## 8. Aspectos Técnicos Destacados
+### Consumo de API REST (Axios)
 ```ts
-await emailjs.send(serviceId as string, templateId as string, params, {
-  publicKey,
+// src/services/api.ts
+const apiClient = axios.create({
+    baseURL: import.meta.env.VITE_API_BASE_URL,
+    headers: { 'Content-Type': 'application/json' }
+})
+
+// Inyección automática de JWT
+apiClient.interceptors.request.use(config => {
+    const token = localStorage.getItem('auth_token');
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
 })
 ```
-*Ubicación:* `src/services/email.ts` – envía notificaciones a programadores o solicitantes validando previamente la configuración.【F:src/services/email.ts】
 
-### Registro de asesorías en Firebase
+### Gestión de Proyectos (Backend integration)
 ```ts
-const payload = {
-  ...data,
-  programmerEmail: contact.programmerEmail,
-  programmerName: contact.programmerName,
-  status: 'pending',
-  response: '',
-  createdAt: serverTimestamp(),
-  updatedAt: serverTimestamp(),
+// src/services/projects.ts
+export const getProjectsByOwner = async (ownerId: string): Promise<Project[]> => {
+    const response = await apiClient.get(`/api/projects/user/${ownerId}`);
+    return response.data;
 }
-
-const docRef = await addDoc(collection(db, collections.advisories), payload)
 ```
-*Ubicación:* `src/services/firestore.ts` – persiste la solicitud y agrega metadata temporal para trazabilidad.【F:src/services/firestore.ts】
 
-### Notificación de respuesta al solicitante
-```ts
-await updateDoc(ref, {
-  status,
-  responseMessage,
-  updatedAt: serverTimestamp(),
-})
-
-await sendRequesterStatusEmail({
-  requesterEmail: advisoryData.requesterEmail as string | undefined,
-  requesterName: advisoryData.requesterName as string | undefined,
-  programmerName: contact.programmerName,
-  status,
-  date: advisoryData.slot?.date as string | undefined,
-  time: advisoryData.slot?.time as string | undefined,
-  responseMessage,
-})
-```
-*Ubicación:* `src/services/firestore.ts` – actualiza el estado de la asesoría y envía la notificación correspondiente.【F:src/services/firestore.ts】
-
-## 9. Conclusiones
-LEXISWARE integra React + Firebase + EmailJS para ofrecer una SPA de portafolios y asesorías con control de roles, persistencia en tiempo real y notificaciones automáticas. El proyecto consolida módulos públicos y privados bien delimitados; las mejoras futuras incluyen migrar almacenamiento multimedia a Firebase Storage, ampliar pruebas automatizadas e integrar calendarios o APIs adicionales para optimizar la coordinación de asesorías.
+## 9. Conclusión
+La migración a una arquitectura robusta con Spring Boot y PostgreSQL proporciona a LEXISWARE la escalabilidad y seguridad necesarias para un entorno profesional. La integración de JWT y el manejo eficiente de datos relacionales aseguran una experiencia de usuario fluida y confiable.
 
 ## 10. Anexos
 
