@@ -75,3 +75,14 @@ export const updateProject = async (
 export const deleteProject = async (id: string): Promise<void> => {
     await apiClient.delete(`/api/projects/${id}`)
 }
+
+/**
+ * Descarga el reporte PDF de los proyectos de un usuario.
+ */
+export const downloadUserProjectsReport = async (uid: string): Promise<Blob> => {
+    const response = await apiClient.get<Blob>(`/api/reports/projects/${uid}/pdf`, {
+        responseType: 'blob'
+    })
+    return response.data
+}
+

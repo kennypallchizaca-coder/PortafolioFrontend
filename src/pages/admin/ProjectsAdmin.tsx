@@ -4,8 +4,8 @@
  */
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FiPlus, FiEdit2, FiTrash2, FiGithub, FiImage, FiSave, FiX } from 'react-icons/fi'
-import { getAllProjects, createProject, updateProject, deleteProject, type Project } from '../../services/projects'
+import { FiPlus, FiEdit2, FiTrash2, FiGithub, FiImage, FiSave, FiX, FiDownload } from 'react-icons/fi'
+import { getAllProjects, createProject, updateProject, deleteProject, downloadUserProjectsReport, type Project } from '../../services/projects'
 import { uploadProjectImage } from '../../services/upload'
 import { useAuth } from '../../context/AuthContext'
 import { Navigate } from 'react-router-dom'
@@ -249,6 +249,23 @@ const ProjectsAdmin = () => {
     setTouched({})
   }
 
+  const handleDownloadReport = async () => {
+    if (!user?.id) return
+    try {
+      const blob = await downloadUserProjectsReport(user.id)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', 'mis_proyectos.pdf')
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error) {
+      console.error('Error downloading report:', error)
+      alert("Error al descargar el reporte.")
+    }
+  }
+
   if (!user) {
     return <Navigate to="/login" replace />
   }
@@ -266,22 +283,33 @@ const ProjectsAdmin = () => {
             <h1 className="text-3xl font-bold">Administrar Proyectos</h1>
             <p className="text-base-content/70">Gestiona los proyectos del equipo</p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="btn btn-primary gap-2"
-          >
-            {showForm ? (
-              <>
-                <FiX className="h-5 w-5" />
-                Cancelar
-              </>
-            ) : (
-              <>
-                <FiPlus className="h-5 w-5" />
-                Nuevo Proyecto
-              </>
-            )}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDownloadReport}
+              className="btn btn-outline gap-2"
+              title="Descargar Reporte PDF"
+            >
+              <FiDownload className="h-5 w-5" />
+              Reporte
+            </button>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="btn btn-primary gap-2"
+            >
+
+              {showForm ? (
+                <>
+                  <FiX className="h-5 w-5" />
+                  Cancelar
+                </>
+              ) : (
+                <>
+                  <FiPlus className="h-5 w-5" />
+                  Nuevo Proyecto
+                </>
+              )}
+            </button>
+          </div>
         </motion.div>
 
         {/* Formulario */}
