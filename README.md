@@ -144,6 +144,18 @@ La aplicación se configura mediante variables de entorno. Es obligatorio defini
 
 ---
 
+## Documentación de la API (Swagger)
+
+El proyecto cuenta con documentación interactiva de sus endpoints utilizando **Swagger UI (OpenAPI 3)**. Esto facilita enormemente las pruebas de integración sin necesidad de herramientas externas como Postman.
+
+*   **URL Local:** `http://localhost:8080/swagger-ui.html`
+*   **URL Producción:** `https://spring-proyecto.onrender.com/swagger-ui.html`
+
+> [!TIP]
+> Para probar los endpoints protegidos, primero debe realizar un login exitoso, copiar el token JWT y pegarlo en el botón **"Authorize"** de Swagger con el prefijo `Bearer <token>`.
+
+---
+
 ## Dependencias
 
 Las principales librerías que potencian LEXISWARE son:

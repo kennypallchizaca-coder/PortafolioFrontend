@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getAdvisoriesByProgrammer, updateAdvisoryStatus, type Advisory } from '../../services/advisories'
 
+
 const AdvisoryInbox = () => {
   const { user } = useAuth()
   const [items, setItems] = useState<Advisory[]>([])
@@ -34,6 +35,8 @@ const AdvisoryInbox = () => {
   useEffect(() => {
     load()
   }, [user?.id])
+
+
 
   const updateStatus = async (id: string, status: 'pending' | 'approved' | 'rejected', response?: string) => {
     try {
@@ -96,37 +99,50 @@ const AdvisoryInbox = () => {
 
       {error && <div className="alert alert-error text-sm">{error}</div>}
       {loading && <div className="skeleton h-20 w-full" />}
-      <div className="space-y-2">
+      <div className="space-y-4">
         {filteredItems.map((item) => (
-          <div key={item.id} className="card bg-base-100 shadow-sm">
+          <div key={item.id} className="card bg-base-100 shadow-sm border border-base-200">
             <div className="card-body">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="font-semibold">{item.requesterName}</h3>
-                  <p className="text-xs text-base-content/60">{item.requesterEmail}</p>
+                  <h3 className="font-semibold text-lg">{item.requesterName}</h3>
+                  <p className="text-sm text-base-content/60">{item.requesterEmail}</p>
                 </div>
-                <span className="badge badge-outline capitalize">{item.status}</span>
+                <span className={`badge capitalize ${item.status === 'approved' ? 'badge-success' :
+                  item.status === 'rejected' ? 'badge-error' : 'badge-warning'
+                  }`}>
+                  {item.status}
+                </span>
               </div>
-              <p className="text-sm">
-                Fecha: {item.date} · Hora: {item.time}
-              </p>
-              <p className="text-sm text-base-content/70">{item.note}</p>
-              {item.status === 'pending' && (
-                <div className="card-actions justify-end">
-                  <button
-                    className="btn btn-success btn-sm"
-                    onClick={() => updateStatus(item.id!, 'approved')}
-                  >
-                    Aprobar
-                  </button>
-                  <button
-                    className="btn btn-error btn-sm"
-                    onClick={() => updateStatus(item.id!, 'rejected')}
-                  >
-                    Rechazar
-                  </button>
-                </div>
-              )}
+
+              <div className="my-2 p-2 bg-base-200 rounded-lg text-sm">
+                <p><strong>Fecha:</strong> {item.date}</p>
+                <p><strong>Hora:</strong> {item.time}</p>
+              </div>
+
+              <p className="text-sm text-base-content/80 italic">"{item.note}"</p>
+
+              {/* Acciones */}
+              <div className="card-actions justify-end mt-4 items-center gap-3">
+
+
+                {item.status === 'pending' && (
+                  <>
+                    <button
+                      className="btn btn-success btn-sm text-white"
+                      onClick={() => updateStatus(item.id!, 'approved')}
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      className="btn btn-error btn-sm text-white"
+                      onClick={() => updateStatus(item.id!, 'rejected')}
+                    >
+                      Rechazar
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         ))}
