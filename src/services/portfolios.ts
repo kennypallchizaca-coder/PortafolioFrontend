@@ -1,7 +1,4 @@
-/**
- * Servicio para gestión de portafolios.
- * Permite obtener, crear y actualizar portafolios de usuario e imagenes.
- */
+// Servicio para gestión de portafolios (CRUD e imágenes)
 import { apiClient } from './api'
 
 export interface Portfolio {
@@ -14,9 +11,7 @@ export interface Portfolio {
     skills?: string[]
 }
 
-/**
- * Obtener portafolio de un usuario
- */
+// Obtiene el portafolio de un usuario específico; retorna datos o null si no existe
 export const getPortfolio = async (userId: string): Promise<Portfolio | null> => {
     try {
         const response = await apiClient.get<Portfolio>(`/api/portfolios/user/${userId}`)
@@ -29,10 +24,7 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
     }
 }
 
-/**
- * Crear o actualizar portafolio
- * El backend maneja la lógica de upsert
- */
+// Crea o actualiza un portafolio existente (lógica Upsert); retorna el portafolio actualizado
 export const upsertPortfolio = async (userId: string, data: Partial<Portfolio>): Promise<Portfolio> => {
     try {
         // Intentar obtener el portafolio existente
@@ -55,9 +47,7 @@ export const upsertPortfolio = async (userId: string, data: Partial<Portfolio>):
     return response.data
 }
 
-/**
- * Obtener todos los portafolios públicos
- */
+// Recupera todos los portafolios marcados como públicos; retorna lista
 export const getAllPortfolios = async (): Promise<Portfolio[]> => {
     const response = await apiClient.get<Portfolio[]>('/api/portfolios/public')
     return response.data

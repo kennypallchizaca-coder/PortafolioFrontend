@@ -1,18 +1,5 @@
-/**
- * Utilidades para validación de formularios estilo Angular para React.
- * 
- * Centraliza la lógica de validación de formularios con reglas reutilizables,
- * mensajes de error personalizables y validaciones comunes (required, email, minLength, etc).
- * 
- * @module utils/FormUtils
- * @author LEXISWARE - Proyecto Académico PPW
- * @example
- * const rules = {
- *   email: [FormUtils.required, FormUtils.email],
- *   password: [FormUtils.required, FormUtils.minLength(6)]
- * };
- * const errors = FormUtils.validateForm(formData, rules);
- */
+// Utilidades de validación para formularios (reglas estilo Angular)
+// Centraliza mensajes y lógica de validación reutilizable
 
 export interface FormErrors {
   [key: string]: {
@@ -23,9 +10,7 @@ export interface FormErrors {
 
 export class FormUtils {
 
-  /**
-   * Valida si un campo es requerido y está vacío
-   */
+  // Valida si un campo es requerido (no nulo, no vacío)
   static required(value: any): string | null {
     if (!value || (typeof value === 'string' && value.trim().length === 0)) {
       return 'Este campo es obligatorio';
@@ -33,9 +18,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida longitud mínima
-   */
+  // Valida que el texto tenga una longitud mínima
   static minLength(value: string, min: number): string | null {
     if (!value) return null;
     if (value.length < min) {
@@ -44,9 +27,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida longitud máxima
-   */
+  // Valida que el texto no exceda una longitud máxima
   static maxLength(value: string, max: number): string | null {
     if (!value) return null;
     if (value.length > max) {
@@ -55,9 +36,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida valor mínimo
-   */
+  // Valida que un número sea mayor o igual al mínimo
   static min(value: number, min: number): string | null {
     if (value === null || value === undefined) return null;
     if (value < min) {
@@ -66,9 +45,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida valor máximo
-   */
+  // Valida que un número sea menor o igual al máximo
   static max(value: number, max: number): string | null {
     if (value === null || value === undefined) return null;
     if (value > max) {
@@ -77,9 +54,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida formato de email
-   */
+  // Valida formato de correo electrónico con Regex
   static email(value: string): string | null {
     if (!value) return null;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -89,9 +64,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida URL
-   */
+  // Valida formato de URL
   static url(value: string): string | null {
     if (!value) return null;
     try {
@@ -102,9 +75,7 @@ export class FormUtils {
     }
   }
 
-  /**
-   * Valida patrón personalizado
-   */
+  // Valida contra una expresión regular personalizada
   static pattern(value: string, pattern: RegExp, message: string): string | null {
     if (!value) return null;
     if (!pattern.test(value)) {
@@ -113,10 +84,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida número de teléfono internacional
-   * Acepta formatos como: +593999999999, +1234567890
-   */
+  // Valida formato de teléfono internacional (E.164)
   static phone(value: string): string | null {
     if (!value) return null;
     // Formato internacional E.164: +[código país][número]
@@ -127,9 +95,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida que una fecha sea futura
-   */
+  // Valida que la fecha seleccionada sea posterior al día de hoy
   static futureDate(value: string): string | null {
     if (!value) return null;
     const selectedDate = new Date(value);
@@ -142,9 +108,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida formato de hora HH:MM (24 horas)
-   */
+  // Valida formato de hora HH:MM (24h)
   static validTime(value: string): string | null {
     if (!value) return null;
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -154,9 +118,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida que dos campos coincidan (útil para confirmación de password, email, etc)
-   */
+  // Valida que dos campos sean idénticos (ej. contraseñas)
   static matchField(value: string, matchValue: string, fieldName: string = 'el campo anterior'): string | null {
     if (!value) return null;
     if (value !== matchValue) {
@@ -165,10 +127,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Sanitiza HTML para prevenir XSS
-   * Convierte caracteres peligrosos en entidades HTML
-   */
+  // Escapa caracteres HTML peligrosos
   static sanitizeHTML(value: string): string {
     if (!value) return '';
     return value
@@ -180,9 +139,7 @@ export class FormUtils {
       .replace(/\//g, '&#x2F;');
   }
 
-  /**
-   * Valida longitud exacta (útil para códigos, documentos, etc)
-   */
+  // Valida longitud exacta de caracteres
   static exactLength(value: string, length: number): string | null {
     if (!value) return null;
     if (value.length !== length) {
@@ -191,9 +148,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida que sea un número entero positivo
-   */
+  // Valida que sea entero positivo > 0
   static positiveInteger(value: any): string | null {
     if (value === null || value === undefined || value === '') return null;
     const num = Number(value);
@@ -203,9 +158,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Ejecuta todas las validaciones de un campo
-   */
+  // Ejecuta una lista de validadores sobre un valor; retorna el primer error encontrado
   static validate(value: any, validators: Array<(val: any) => string | null>): string | null {
     for (const validator of validators) {
       const error = validator(value);
@@ -214,9 +167,7 @@ export class FormUtils {
     return null;
   }
 
-  /**
-   * Valida todo un formulario
-   */
+  // Valida un objeto completo de formulario contra un esquema de reglas
   static validateForm(formData: any, rules: { [key: string]: Array<(val: any) => string | null> }): { [key: string]: string } {
     const errors: { [key: string]: string } = {};
 
@@ -230,16 +181,12 @@ export class FormUtils {
     return errors;
   }
 
-  /**
-   * Verifica si el formulario tiene errores
-   */
+  // Retorna true si existen errores en el objeto de errores
   static hasErrors(errors: { [key: string]: string }): boolean {
     return Object.keys(errors).length > 0;
   }
 
-  /**
-   * Limpia errores del formulario
-   */
+  // Retorna un objeto de errores vacío
   static clearErrors(): { [key: string]: string } {
     return {};
   }

@@ -1,7 +1,5 @@
-/**
- * Página de login con email y contraseña.
- * Prácticas: Formularios (feedback de error), Auth con JWT.
- */
+// Página de autenticación que permite el inicio de sesión y registro de usuarios
+
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
@@ -39,7 +37,7 @@ const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Redirigir si ya está autenticado
+  // Redirigir al usuario a su destino anterior o al inicio si ya está autenticado
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
       const from = (location.state as any)?.from?.pathname || '/'
@@ -59,6 +57,7 @@ const LoginPage = () => {
     )
   }
 
+  // Maneja la autenticación del usuario y gestiona errores de credenciales
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -74,6 +73,7 @@ const LoginPage = () => {
     }
   }
 
+  // Registra un nuevo usuario y realiza un inicio de sesión automático tras el éxito
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)

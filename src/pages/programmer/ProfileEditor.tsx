@@ -1,7 +1,5 @@
-/**
- * Editor de perfil del programador (foto, nombre, bio, especialidad).
- * Heurísticas aplicadas: #5 Prevención de errores, #2 Feedback inmediato, #9 Mensajes claros
- */
+// Editor detallado del perfil profesional del programador, incluyendo habilidades y disponibilidad
+
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getProgrammer, updateProgrammer, type ProgrammerProfile } from '../../services/programmers'
@@ -67,6 +65,7 @@ const ProfileEditor = () => {
   }
 
   useEffect(() => {
+    // Recupera los datos actuales del perfil del programador desde el servidor
     const loadProfile = async () => {
       if (!user?.id) return
       try {
@@ -117,6 +116,7 @@ const ProfileEditor = () => {
     }
   }
 
+  // Procesa la imagen seleccionada para previsualización antes de subirla
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -129,6 +129,7 @@ const ProfileEditor = () => {
     }
   }
 
+  // Valida y guarda toda la información del perfil, gestionando la subida de la imagen
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!user?.id) {

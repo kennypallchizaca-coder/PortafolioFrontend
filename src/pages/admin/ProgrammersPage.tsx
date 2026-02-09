@@ -121,6 +121,7 @@ const ProgrammersPage = () => {
     }
   }
 
+  // Procesa el envío del formulario: valida, sube imagen si existe y guarda el perfil
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
@@ -204,6 +205,7 @@ const ProgrammersPage = () => {
     }
   }
 
+  // Carga el perfil de un programador en el formulario para su edición
   const handleEdit = (dev: ProgrammerProfile) => {
     setEditingId(dev.id!)
     setForm({

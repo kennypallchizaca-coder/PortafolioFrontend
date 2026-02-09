@@ -1,7 +1,4 @@
-/**
- * Utilidades para el manejo de calendarios, horarios y disponibilidad.
- * @module utils/schedule
- */
+// Utilidades para manejo de horarios y disponibilidad
 export const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 
 export const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
@@ -10,17 +7,10 @@ export const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
     return `${hour}:${minute}`
 })
 
-/**
- * Mapeo de índice de día (0=Domingo) a nombre legible.
- */
+// Mapa de índices (0-6) a nombres de días
 export const DAYS_MAP = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
-/**
- * Expande rangos de tiempo o horas exactas en una lista de slots individuales.
- * Soporta formatos como "09:00" o "09:00 - 12:00".
- * @param timeStr Cadena de texto con la hora o el rango.
- * @returns Array de slots de 30 minutos (ej: ["09:00", "09:30"]).
- */
+// Genera una lista de intervalos de 30 min (ej: "09:00", "09:30") a partir de un rango o hora única
 export const expandTimeSlots = (timeStr: string): string[] => {
     const slots: string[] = []
     const cleanStr = timeStr.trim()
@@ -50,12 +40,7 @@ export const expandTimeSlots = (timeStr: string): string[] => {
     return slots
 }
 
-/**
- * Procesa el array de horarios del programador y lo organiza por días.
- * Clasifica los horarios que incluyen el nombre del día y los genéricos.
- * @param scheduleItems Lista de strings con horarios (ej: ["Lunes 09:00-12:00", "15:00"]).
- * @returns Objeto con mapa por días, lista de genéricos y días encontrados.
- */
+// Organiza una lista de strings de horarios en una estructura agrupada por días
 export const parseProgrammerSchedule = (scheduleItems: string[]) => {
     const map: { [key: string]: string[] } = {}
     const generics: string[] = []

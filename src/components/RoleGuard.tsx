@@ -1,7 +1,5 @@
-/**
- * Guard de rol para restringir vistas a admin/programmer.
- * Práctica: Roles y permisos en routing.
- */
+// Wrapper para restringir acceso basado en roles específicos
+
 import { Navigate } from 'react-router-dom'
 import { ReactNode } from 'react'
 import { useAuth } from '../context/AuthContext'

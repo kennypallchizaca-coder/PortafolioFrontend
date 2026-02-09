@@ -1,7 +1,4 @@
-/**
- * Servicio para gestión de programadores (CRUD).
- * Conecta con endpoints del backend Spring Boot.
- */
+// Servicio de gestión de programadores (CRUD)
 import apiClient from './api'
 import { Role } from './auth'
 
@@ -24,9 +21,7 @@ export interface ProgrammerProfile {
     }
 }
 
-/**
- * Obtener todos los programadores
- */
+// Obtiene la lista completa de programadores y formatea sus datos; retorna array
 export const getProgrammers = async (): Promise<ProgrammerProfile[]> => {
     const response = await apiClient.get<any[]>('/api/users/programmers')
     // mapear campos del backend a formato frontend
@@ -41,9 +36,7 @@ export const getProgrammers = async (): Promise<ProgrammerProfile[]> => {
     }))
 }
 
-/**
- * Obtener un programador por ID
- */
+// Busca un programador por ID y formatea la respuesta; retorna perfil del programador
 export const getProgrammer = async (id: string): Promise<ProgrammerProfile> => {
     const response = await apiClient.get<any>(`/api/users/${id}`)
     // mapear campos del backend a formato frontend
@@ -58,10 +51,7 @@ export const getProgrammer = async (id: string): Promise<ProgrammerProfile> => {
     }
 }
 
-/**
- * Crea o actualiza un programador.
- * Transforma el objeto socials al formato que espera el backend.
- */
+// Crea o actualiza programador, aplanando objeto 'socials' para el backend; retorna perfil actualizado
 export const upsertProgrammer = async (
     id: string,
     data: Partial<ProgrammerProfile>
@@ -91,9 +81,7 @@ export const upsertProgrammer = async (
     }
 }
 
-/**
- * Actualizar perfil de programador
- */
+// Actualiza parcialmente perfil de programador (PATCH); retorna perfil actualizado
 export const updateProgrammer = async (
     id: string,
     data: Partial<ProgrammerProfile>
@@ -121,9 +109,7 @@ export const updateProgrammer = async (
     }
 }
 
-/**
- * Eliminar un programador
- */
+// Elimina un programador del sistema por ID
 export const deleteProgrammer = async (id: string): Promise<void> => {
     await apiClient.delete(`/api/users/${id}`)
 }
@@ -142,6 +128,7 @@ export interface Portfolio {
     about?: string   // for mapping
 }
 
+// Busca el portafolio asociado a un programador; retorna portafolio o null
 export const getPortfolio = async (ownerId: string): Promise<Portfolio | null> => {
     try {
         // endpoint del backend para buscar por ID del propietario
@@ -155,9 +142,7 @@ export const getPortfolio = async (ownerId: string): Promise<Portfolio | null> =
     }
 }
 
-/**
- * Actualizar portafolio de un programador
- */
+// Crea o actualiza el portafolio de un programador; retorna portafolio
 export const upsertPortfolio = async (
     ownerId: string,
     data: Portfolio

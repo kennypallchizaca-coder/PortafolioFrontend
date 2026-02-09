@@ -1,6 +1,5 @@
-/**
- * Logo ALX con anillo orbital usando el logo.webp original
- */
+// Logo principal de la aplicación
+
 import { memo } from 'react'
 import logoWebp from '../img/logo.webp'
 

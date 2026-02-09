@@ -1,6 +1,5 @@
-/**
- * Componente de galaxia optimizado para mejor rendimiento
- */
+// Fondo animado de galaxia optimizado con Memo
+
 import { memo } from 'react'
 import { GalaxyComponent } from '@r0rri/react-galaxy-bg'
 

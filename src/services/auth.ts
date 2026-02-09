@@ -1,7 +1,4 @@
-/**
- * Servicio de Autenticación.
- * Maneja el inicio de sesión, registro, gestión de sesiones y tokens JWT.
- */
+// Servicio de autenticación (Login, Registro, Sesión)
 import apiClient from './api'
 
 export type Role = 'ADMIN' | 'PROGRAMMER' | 'EXTERNAL'
@@ -30,12 +27,11 @@ export interface LoginResponse {
   user: UserProfile
 }
 
-// Función para asegurar que el objeto usuario tenga un ID consistente, 
-// manejando posibles variaciones en los nombres de campos que devuelve la base de datos
+// Normaliza el objeto usuario asegurando que tenga un campo 'id' consistente
 const normalizeUser = (user: any): UserProfile => {
   if (!user) return user
 
-  // Intentar obtener el ID de diferentes propiedades comunes (_id para Mongo, id para SQL/DTOs)
+  // Busca el ID en propiedades comunes (_id, userId, uid)
   const id = user.id || user._id || user.userId || user.uid
 
   return {
@@ -44,10 +40,7 @@ const normalizeUser = (user: any): UserProfile => {
   }
 }
 
-/**
- * Realiza la petición de inicio de sesión al servidor.
- * Si es exitosa, guarda el token y los datos del usuario en el almacenamiento local (localStorage).
- */
+// Autentica al usuario con email/password; retorna token y perfil usuario
 export const login = async (email: string, password: string): Promise<LoginResponse> => {
   try {
     // Enviar credenciales al endpoint de login
@@ -56,12 +49,12 @@ export const login = async (email: string, password: string): Promise<LoginRespo
       password,
     })
 
-    // Si el servidor responde con un token, procedemos a persistir la sesión
+    // Si hay token, persiste sesión y normaliza usuario
     if (response.data.token) {
       const normalizedUser = normalizeUser(response.data.user)
-      // Guardar el JWT para ser usado en futuras peticiones (adjunto automáticamente por el interceptor de apiClient)
+      // Guarda token para interceptor
       localStorage.setItem('auth_token', response.data.token)
-      // Guardar info básica del usuario para mostrar en la UI sin esperar a otra petición
+      // Cachea usuario para UI inmediata
       localStorage.setItem('user', JSON.stringify(normalizedUser))
 
       return {
@@ -83,9 +76,7 @@ export interface RegisterInput {
   displayName: string
 }
 
-/**
- * Registra un nuevo usuario en el sistema.
- */
+// Registra usuario nuevo y devuelve sesión iniciada
 export const register = async (data: RegisterInput): Promise<LoginResponse> => {
   try {
     const response = await apiClient.post<LoginResponse>('/api/auth/register', data)
@@ -108,9 +99,7 @@ export const register = async (data: RegisterInput): Promise<LoginResponse> => {
   }
 }
 
-/**
- * Cierra la sesión del usuario actual, notificando al servidor y limpiando los datos locales.
- */
+// Cierra sesión: limpia localStorage y notifica al servidor
 export const logout = async (): Promise<void> => {
   try {
     // Intentar avisar al servidor sobre el cierre de sesión (opcional para JWT pero buena práctica)
@@ -124,9 +113,7 @@ export const logout = async (): Promise<void> => {
   }
 }
 
-/**
- * Recupera el usuario guardado localmente en el navegador.
- */
+// Obtiene usuario actual desde localStorage (sin llamada a API)
 export const getCurrentUser = (): UserProfile | null => {
   const userStr = localStorage.getItem('user')
   if (!userStr) return null
@@ -141,10 +128,7 @@ export const getCurrentUser = (): UserProfile | null => {
   }
 }
 
-/**
- * Verifica si el token actual sigue siendo válido contra el servidor.
- * Se usa normalmente al recargar la página para asegurar que la sesión no haya expirado.
- */
+// Valida token con backend y actualiza datos de usuario; retorna null si falla
 export const verifyToken = async (): Promise<UserProfile | null> => {
   const token = localStorage.getItem('auth_token')
   if (!token) return null
@@ -166,13 +150,13 @@ export const verifyToken = async (): Promise<UserProfile | null> => {
   }
 }
 
-// Retorna el rol del usuario actual si está autenticado
+// Retorna el rol del usuario actual (ADMIN/PROGRAMMER/EXTERNAL) o null
 export const getUserRole = (): Role | null => {
   const user = getCurrentUser()
   return user?.role || null
 }
 
-// Verificación rápida de si existe un token guardado
+// Verifica existencia de token en almacenamiento local
 export const isAuthenticated = (): boolean => {
   return !!localStorage.getItem('auth_token')
 }

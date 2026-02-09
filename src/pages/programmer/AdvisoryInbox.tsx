@@ -1,7 +1,5 @@
-/**
- * Bandeja de asesorías del programador.
- * Prácticas: REST API, manejo de estados, feedback.
- */
+// Bandeja de entrada para que los programadores gestionen sus solicitudes de asesoría
+
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getAdvisoriesByProgrammer, updateAdvisoryStatus, clearAdvisoryHistory, type Advisory } from '../../services/advisories'
@@ -14,6 +12,7 @@ const AdvisoryInbox = () => {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState<'todas' | 'pending' | 'approved' | 'rejected'>('pending')
 
+  // Elimina todas las asesorías con estado aprobado o rechazado del historial
   const clearHistory = async () => {
     if (!confirm('¿Estás seguro de que deseas borrar el historial? Esto eliminará las asesorías aprobadas y rechazadas.')) return
 
@@ -28,6 +27,7 @@ const AdvisoryInbox = () => {
     }
   }
 
+  // Obtiene las asesorías vinculadas al programador actual
   const load = async () => {
     if (!user?.id) return
     setLoading(true)
@@ -48,6 +48,7 @@ const AdvisoryInbox = () => {
 
 
 
+  // Actualiza el estado de una asesoría (aprobar/rechazar) con una respuesta opcional
   const updateStatus = async (id: string, status: 'pending' | 'approved' | 'rejected', response?: string) => {
     try {
       await updateAdvisoryStatus(id, status, response || (status === 'approved' ? 'Confirmada' : 'Rechazada'))

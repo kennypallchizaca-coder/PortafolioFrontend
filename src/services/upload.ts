@@ -1,8 +1,4 @@
-/**
- * Servicio para subida de archivos al backend Spring Boot.
- * Maneja imágenes de perfil, proyectos y otros recursos.
- * @module services/upload
- */
+// Servicio para subida de archivos (imágenes, avatares)
 import apiClient from './api'
 
 export interface UploadResponse {
@@ -10,9 +6,7 @@ export interface UploadResponse {
     filename: string
 }
 
-/**
- * Subir una imagen (Generic helper - not exported)
- */
+// Helper interno para enviar archivos como FormData; retorna URL y nombre
 const uploadFile = async (file: File, endpoint: string): Promise<UploadResponse> => {
     const formData = new FormData()
     formData.append('file', file)
@@ -26,17 +20,13 @@ const uploadFile = async (file: File, endpoint: string): Promise<UploadResponse>
     return response.data
 }
 
-/**
- * Subir avatar de usuario
- */
+// Sube imagen de perfil de usuario; retorna respuesta de subida
 export const uploadAvatar = async (file: File, userId?: string): Promise<UploadResponse> => {
     // Backend endpoint: /api/files/upload/profile
     return uploadFile(file, '/api/files/upload/profile')
 }
 
-/**
- * Subir imagen de proyecto
- */
+// Sube imagen de portada de proyecto; retorna respuesta de subida
 export const uploadProjectImage = async (
     file: File,
     projectId?: string

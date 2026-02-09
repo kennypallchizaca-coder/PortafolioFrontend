@@ -1,7 +1,5 @@
-/**
- * Layout para panel (admin o programador) con área de contenido.
- * Prácticas: UX (consistencia), Routing anidado protegido.
- */
+// Contenedor principal para las áreas de administración y perfiles de programadores
+
 import { Outlet, Link } from 'react-router-dom'
 import NavBar from '../components/NavBar'
 

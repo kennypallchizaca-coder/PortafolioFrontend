@@ -1,6 +1,5 @@
-/**
- * Directorio público de programadores
- */
+// Directorio de todos los programadores del sistema con opciones de búsqueda y filtrado
+
 import { useEffect, useState } from 'react'
 import { getProgrammers, type ProgrammerProfile } from '../../services/programmers'
 import { Link } from 'react-router-dom'
@@ -17,6 +16,7 @@ const ProgrammerDirectory = () => {
 
   const { role, isAuthenticated, user } = useAuth()
 
+  // Obtiene todos los perfiles de programadores registrados para el directorio
   useEffect(() => {
     const loadProgrammers = async () => {
       setLoading(true)

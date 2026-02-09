@@ -1,4 +1,4 @@
-//este es un comentario ejemplo
+// Página de inicio con presentación, efectos visuales y acceso rápido a secciones principales
 
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -13,6 +13,7 @@ const Home = () => {
   const prefersReducedMotion = useReducedMotion()
   const allowMotion = !prefersReducedMotion
 
+  // Valida que el usuario esté autenticado antes de permitir solicitar una asesoría
   const handleAdvisoryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!isAuthenticated) {
       e.preventDefault()
@@ -31,6 +32,7 @@ const Home = () => {
   const [indexFrase, setIndexFrase] = useState(0)
   const [pos, setPos] = useState(0)
 
+  // Efecto de escritura automática para animar las frases de bienvenida
   useEffect(() => {
     const current = frases[indexFrase]
 
@@ -38,7 +40,7 @@ const Home = () => {
       const timer = setTimeout(() => {
         setTexto((prev) => prev + current[pos])
         setPos(pos + 1)
-      }, 80) //este es un comentario ejemplo
+      }, 80)
       return () => clearTimeout(timer)
     } else {
       const timer = setTimeout(() => {

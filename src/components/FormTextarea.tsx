@@ -1,15 +1,5 @@
-/**
- * Componente reutilizable de textarea de formulario con validación integrada.
- * 
- * Implementa heurísticas de UX:
- * - Contador de caracteres en tiempo real
- * - Feedback visual de errores
- * - Redimensionamiento automático
- * - Accesibilidad (ARIA labels)
- * 
- * @module components/FormTextarea
- * @author LEXISWARE - Proyecto Académico PPW
- */
+// Textarea reutilizable con contador de caracteres y validación
+
 import { ChangeEvent } from 'react'
 
 interface FormTextareaProps {
@@ -52,6 +42,7 @@ export const FormTextarea: React.FC<FormTextareaProps> = ({
     const errorId = `${name}-error`
     const helpId = `${name}-help`
 
+    // Calcula el color del contador según el porcentaje de uso (aviso visual)
     const getCharCountColor = () => {
         if (!maxLength) return 'text-base-content/60'
         const percentage = (value.length / maxLength) * 100

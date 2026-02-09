@@ -1,14 +1,5 @@
-/**
- * Componente para mostrar imágenes almacenadas en localStorage (Base64).
- * 
- * Solución alternativa para evitar limitaciones de Firebase Storage en plan gratuito.
- * Carga imágenes desde localStorage con fallback a URL externa o imagen por defecto.
- * 
- * @component
- * @param {LocalImageProps} props - uid: ID único, type: 'photo'|'project', fallback: URL opcional
- * @example
- * <LocalImage uid="user123" type="photo" fallback="/default.jpg" alt="Perfil" />
- */
+// Componente que carga imágenes desde localStorage (base64) para evadir límites de plan gratuito
+
 import { useEffect, useState } from 'react'
 
 interface LocalImageProps {
@@ -22,6 +13,7 @@ interface LocalImageProps {
 const LocalImage = ({ uid, type, fallback, alt = '', className = '' }: LocalImageProps) => {
   const [src, setSrc] = useState(fallback || '')
 
+  // Intenta leer la imagen del almacenamiento local usando una clave basada en UID y tipo
   useEffect(() => {
     const key = type === 'photo' ? `photo_${uid}` : `project_img_${uid}`
     const saved = localStorage.getItem(key)

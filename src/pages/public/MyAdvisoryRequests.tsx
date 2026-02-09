@@ -1,7 +1,5 @@
-/**
- * Componente para ver las solicitudes de asesoría del usuario externo.
- * Seguridad: Solo muestra solicitudes del usuario autenticado.
- */
+// Visualización del historial de asesorías para el usuario que las solicitó
+
 import { useEffect, useState } from 'react'
 import { getAdvisoriesByRequester, clearAdvisoryHistory, clearRequesterHistory, type Advisory } from '../../services/advisories'
 import { useAuth } from '../../context/AuthContext'

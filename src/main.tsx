@@ -1,7 +1,5 @@
-/**
- * Punto de entrada de la app.
- * Práctica: Instalación/configuración. Monta contextos globales (auth/tema) y router.
- */
+// Punto de entrada de la aplicación que inicializa el DOM y los proveedores globales
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'

@@ -1,9 +1,5 @@
-/**
- * Componente reutilizable de select de formulario con validación integrada.
- * 
- * @module components/FormSelect
- * @author LEXISWARE - Proyecto Académico PPW
- */
+// Select reutilizable con validación y estilos uniformes
+
 import { ChangeEvent, ReactNode } from 'react'
 
 interface FormSelectProps {
@@ -40,7 +36,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
     const errorId = `${name}-error`
     const helpId = `${name}-help`
 
-    // Solo mostrar asterisco si el campo está vacío y es requerido
+    // Muestra asterisco solo si es requerido y no tiene valor seleccionado
     const showAsterisk = required && !value
 
     return (

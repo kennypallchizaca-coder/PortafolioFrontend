@@ -1,7 +1,5 @@
-/**
- * Dashboard del Programador.
- * Prácticas: UX (feedback de progreso), accesos a portafolio/proyectos/asesorías.
- */
+// Panel principal del programador con accesos directos a la gestión de perfil y contenido
+
 import { Link } from 'react-router-dom'
 
 const ProgrammerDashboard = () => {

@@ -1,7 +1,4 @@
-/**
- * Servicio de correos (EmailJS).
- * Maneja el envio de notificaciones sin exponer logica en los componentes.
- */
+// Servicio de envío de correos usando EmailJS
 import emailjs from '@emailjs/browser'
 
 const serviceId = "service_ut10vml"
@@ -12,6 +9,7 @@ const publicKey = "ESq6kz1urCyDp34G8"
 const isConfigured = (templateId?: string) =>
   Boolean(serviceId && publicKey && templateId)
 
+// Envía correo genérico validando configuración
 const sendEmail = async (
   templateId: string | undefined,
   params: Record<string, unknown>,
@@ -40,6 +38,7 @@ export interface ProgrammerAdvisoryEmailInput {
   note?: string
 }
 
+// Notifica al programador sobre una nueva solicitud de asesoría
 export const sendProgrammerAdvisoryEmail = async (
   payload: ProgrammerAdvisoryEmailInput,
 ) => {
@@ -69,6 +68,7 @@ export interface RequesterStatusEmailInput {
   responseMessage?: string
 }
 
+// Notifica al solicitante sobre cambios de estado (aprobada/rechazada)
 export const sendRequesterStatusEmail = async (
   payload: RequesterStatusEmailInput,
 ) => {

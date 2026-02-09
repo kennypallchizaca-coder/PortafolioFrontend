@@ -1,7 +1,4 @@
-/**
- * Servicio para gestión de asesorías.
- * Conecta con endpoints del backend Spring Boot.
- */
+// Cliente Axios configurado
 import apiClient from './api'
 
 export interface AdvisoryRequestInput {
@@ -31,9 +28,7 @@ export interface Advisory {
     updatedAt?: Date
 }
 
-/**
- * Crear una solicitud de asesoría
- */
+// Envía una solicitud de asesoría al backend; retorna la asesoría creada
 export const createAdvisoryRequest = async (
     data: AdvisoryRequestInput
 ): Promise<Advisory> => {
@@ -41,20 +36,16 @@ export const createAdvisoryRequest = async (
     return response.data
 }
 
-/**
- * Obtener asesorías por programador
- */
+// Obtiene las asesorías asignadas a un programador; retorna una lista de asesorías
 export const getAdvisoriesByProgrammer = async (
     programmerId: string
 ): Promise<Advisory[]> => {
-    // el backend retorna Page<Advisory>
+    // El backend retorna Page<Advisory>, extraemos el contenido
     const response = await apiClient.get<any>(`/api/advisories/programmer/${programmerId}`)
     return response.data.content || response.data
 }
 
-/**
- * Obtener asesorías por email del solicitante
- */
+// Busca asesorías solicitadas por un email específico; retorna la lista encontrada
 export const getAdvisoriesByRequester = async (
     requesterEmail: string
 ): Promise<Advisory[]> => {
@@ -62,32 +53,25 @@ export const getAdvisoriesByRequester = async (
     return response.data.content || response.data
 }
 
-/**
- * Actualizar estado de una asesoría
- */
+// Actualiza el estado (pending/approved/rejected) de una asesoría; retorna la asesoría actualizada
 export const updateAdvisoryStatus = async (
     id: string,
     status: 'pending' | 'approved' | 'rejected',
     responseMessage?: string
 ): Promise<Advisory> => {
-    // el backend usa PATCH /api/advisories/{id}/status
-    // el cuerpo espera "status"
+    // Se envía el nuevo estado al endpoint PATCH
     const response = await apiClient.patch<Advisory>(`/api/advisories/${id}/status`, {
         status,
         responseMessage,
     })
     return response.data
 }
-/**
- * Limpiar historial de asesorías (aprobadas y rechazadas)
- */
+// Elimina todo el historial de asesorías
 export const clearAdvisoryHistory = async (): Promise<void> => {
     await apiClient.delete('/api/advisories/history')
 }
 
-/**
- * Limpiar historial de asesorías de un solicitante específico
- */
+// Elimina el historial de asesorías de un solicitante específico
 export const clearRequesterHistory = async (email: string): Promise<void> => {
     await apiClient.delete(`/api/advisories/requester/${email}`)
 }

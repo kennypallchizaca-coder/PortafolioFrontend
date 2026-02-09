@@ -1,7 +1,5 @@
-/**
- * Dashboard del Administrador - Estilo Alienware Command Center
- * Diseño con hexágonos, líneas angulares y efectos neón adaptativos
- */
+// Panel principal de administración con estadísticas, gráficos y reportes
+
 import { useEffect, useState, useRef } from 'react'
 import { getProgrammers } from '../../services/programmers'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area } from 'recharts'
@@ -38,6 +36,7 @@ const THEME_COLORS = {
 const AnimatedCounter = ({ value, duration = 1.5 }: { value: number, duration?: number }) => {
   const nodeRef = useRef<HTMLSpanElement>(null);
 
+  // Efecto para animar el contador desde 0 hasta el valor objetivo
   useEffect(() => {
     const node = nodeRef.current;
     if (!node) return;
@@ -155,9 +154,11 @@ const AdminDashboard = () => {
       }
     }
 
+    // Carga todas las estadísticas del dashboard desde múltiples endpoints
     loadStats()
   }, [])
 
+  // Descarga reportes en formato PDF desde el servidor
   const downloadPdf = async (type: 'programmers' | 'advisories') => {
     try {
       const response = await api.get(`/api/reports/${type}/pdf`, { responseType: 'blob' });

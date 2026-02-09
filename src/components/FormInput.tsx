@@ -1,15 +1,5 @@
-/**
- * Componente reutilizable de input de formulario con validación integrada.
- * 
- * Implementa heurísticas de UX:
- * - Feedback visual de errores
- * - Mensajes de ayuda contextuales
- * - Accesibilidad (ARIA labels)
- * - Indicadores de campos requeridos
- * 
- * @module components/FormInput
- * @author LEXISWARE - Proyecto Académico PPW
- */
+// Input reutilizable con validación y manejo de errores UI
+
 import { ChangeEvent } from 'react'
 
 interface FormInputProps {

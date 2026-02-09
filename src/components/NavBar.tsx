@@ -1,7 +1,5 @@
-/**
- * Barra de navegación principal (público y dashboard).
- * Prácticas: UX/UI (feedback claro, accesibilidad), DaisyUI para estilo.
- */
+// Barra de navegación principal responsive con manejo de sesión y temas
+
 
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +22,7 @@ const NavBar = () => {
   const navigate = useNavigate();
   const [secretClicks, setSecretClicks] = useState(0);
 
+  // Easter egg: 5 clics en el logo redirigen al login si no hay sesión
   const handleLogoClick = () => {
     if (!isAuthenticated) {
       const newCount = secretClicks + 1;
@@ -35,6 +34,7 @@ const NavBar = () => {
     }
   };
 
+  // Cierra la sesión y redirige al inicio
   const handleLogout = async () => {
     try {
       await logout();
@@ -44,7 +44,7 @@ const NavBar = () => {
     }
   };
 
-  // Helper para verificar rol de manera flexible y robusta
+  // Determina si el usuario tiene rol externo
   const isExternal = isAuthenticated && (() => {
     const r = (role as string)?.toLowerCase() || ''
     return ['role_external', 'external', 'role_user', 'user'].includes(r)

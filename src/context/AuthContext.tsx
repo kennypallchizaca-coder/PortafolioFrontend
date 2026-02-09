@@ -1,6 +1,5 @@
-/**
- * AuthContext para autenticación con JWT.
- */
+// Contexto para gestionar el estado de autenticación y datos del usuario de forma global
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import * as authService from '../services/auth'
 
@@ -53,6 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false)
     }
 
+    // Inicializa la sesión verificando la validez del token almacenado localmente
     initAuth()
   }, [])
 

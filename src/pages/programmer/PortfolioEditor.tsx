@@ -1,7 +1,5 @@
-/**
- * Editor de portafolio del programador.
- * Prácticas: Formularios controlados, validación mínima, feedback DaisyUI.
- */
+// Editor para personalizar la apariencia y visibilidad del portafolio público
+
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { getPortfolio, upsertPortfolio } from '../../services/portfolios'
@@ -22,6 +20,7 @@ const PortfolioEditor = () => {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  // Carga la información del portafolio del programador al montar el componente
   useEffect(() => {
     const load = async () => {
       if (!user?.id) return
@@ -45,6 +44,7 @@ const PortfolioEditor = () => {
     setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
+  // Envía los cambios del portafolio al servidor para su persistencia
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!user?.id) {

@@ -1,7 +1,5 @@
-/**
- * Ruta protegida que exige sesión activa.
- * Prácticas: Routing protegido + feedback de carga con DaisyUI.
- */
+// Wrapper para rutas que requieren autenticación; redirige al login si no hay sesión
+
 import { Navigate, useLocation } from 'react-router-dom'
 import { ReactNode } from 'react'
 import { useAuth } from '../context/AuthContext'

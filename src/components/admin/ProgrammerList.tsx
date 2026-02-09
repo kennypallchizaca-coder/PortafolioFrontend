@@ -8,6 +8,7 @@ interface ProgrammerListProps {
     onDelete: (uid: string, displayName: string) => void
 }
 
+// Componente de lista para visualizar programadores en el panel de admin
 export const ProgrammerList = ({ programmers, onEdit, onDelete }: ProgrammerListProps) => {
     return (
         <div className="card bg-base-100 shadow-md">

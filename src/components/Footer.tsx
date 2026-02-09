@@ -1,7 +1,5 @@
-/**
- * Pie de página con info básica.
- * Práctica: Consistencia visual y navegación secundaria.
- */
+// Pie de página con enlaces y copyright
+
 import { Link } from 'react-router-dom'
 import Logo from './Logo'
 import footerBg from '../img/footer-bg.png'
@@ -11,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 const Footer = () => {
   const { role, isAuthenticated } = useAuth()
 
+  // Verifica autenticación antes de permitir agendar asesoría
   const handleAdvisoryClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!isAuthenticated) {
       e.preventDefault()

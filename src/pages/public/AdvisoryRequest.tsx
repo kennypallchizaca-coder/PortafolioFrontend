@@ -1,7 +1,5 @@
-/**
- * Formulario público para solicitar asesoría.
- * Prácticas: FormUtils para validación, REST API.
- */
+// Formulario para que los usuarios soliciten asesorías personalizadas con expertos
+
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { createAdvisoryRequest } from '../../services/advisories'
 import { getProgrammers, type ProgrammerProfile } from '../../services/programmers'
@@ -148,6 +146,7 @@ const AdvisoryRequest = () => {
     }
   }
 
+  // Procesa el envío de la solicitud, validando disponibilidad y enviando datos al servidor
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 

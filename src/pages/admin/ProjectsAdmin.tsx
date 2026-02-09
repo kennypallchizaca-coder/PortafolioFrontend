@@ -1,7 +1,5 @@
-/**
- * Panel de administración de proyectos con formularios dinámicos
- * Práctica: FormArray en React - agregar/eliminar tecnologías y miembros del equipo
- */
+// Gestión de proyectos del equipo con soporte para formularios dinámicos
+
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FiPlus, FiEdit2, FiTrash2, FiGithub, FiImage, FiSave, FiX, FiDownload } from 'react-icons/fi'
@@ -133,6 +131,7 @@ const ProjectsAdmin = () => {
     }
   }
 
+  // Valida y guarda un proyecto; incluye subida de imagen y manejo de tecnologías
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 

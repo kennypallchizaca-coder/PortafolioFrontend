@@ -1,4 +1,4 @@
-//este es un comentario ejemplo
+// Galería pública de proyectos con filtrado por categoría
 import { useEffect, useState } from 'react'
 import { getAllProjects, type Project } from '../../services/projects'
 import { FiGithub, FiExternalLink } from 'react-icons/fi'
@@ -8,6 +8,7 @@ const Projects = () => {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'academico' | 'laboral'>('all')
 
+  // Recupera todos los proyectos disponibles desde el servicio
   useEffect(() => {
     const loadProjects = async () => {
       try {

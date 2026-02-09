@@ -1,7 +1,5 @@
-/**
- * Contexto de tema (DaisyUI).
- * Práctica: UX y consistencia visual (tema claro/oscuro).
- */
+// Contexto para el manejo dinámico de temas visuales mediante DaisyUI
+
 import {
   createContext,
   useContext,

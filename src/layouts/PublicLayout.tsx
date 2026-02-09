@@ -1,7 +1,5 @@
-/**
- * Layout para vistas públicas.
- * Prácticas: Routing y UX (diferenciar público vs dashboard).
- */
+// Estructura base para las páginas públicas, incluyendo barra de navegación y pie de página
+
 import { Outlet } from 'react-router-dom'
 import NavBar from '../components/NavBar'
 import Footer from '../components/Footer'

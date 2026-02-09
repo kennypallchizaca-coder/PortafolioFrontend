@@ -1,7 +1,4 @@
-/**
- * Servicio para gestión de proyectos individuales.
- * Conecta con el CRUD de proyectos en el backend.
- */
+// Servicio para gestión de proyectos (CRUD)
 import apiClient from './api'
 
 export interface Project {
@@ -19,10 +16,7 @@ export interface Project {
     updatedAt?: Date
 }
 
-/**
- * Obtiene todos los proyectos que pertenecen a un usuario específico.
- * @param ownerId UID del propietario del proyecto.
- */
+// Obtiene proyectos de un usuario específico; retorna lista de proyectos
 export const getProjectsByOwner = async (ownerId: string): Promise<Project[]> => {
     // Realizar petición GET al endpoint filtrado por usuario
     // El objeto retornado por Spring Boot suele ser un Pageable, 
@@ -31,35 +25,26 @@ export const getProjectsByOwner = async (ownerId: string): Promise<Project[]> =>
     return response.data.content || response.data
 }
 
-/**
- * Recupera la lista global de proyectos registrados en la plataforma.
- */
+// Obtiene todos los proyectos registrados en la plataforma; retorna lista
 export const getAllProjects = async (): Promise<Project[]> => {
     const response = await apiClient.get<any>('/api/projects')
     // Manejo de respuesta paginada de Spring Data
     return response.data.content || response.data
 }
 
-/**
- * Busca los detalles de un proyecto único por su identificador numérico.
- */
+// Busca un proyecto por su ID único; retorna el proyecto
 export const getProject = async (id: string): Promise<Project> => {
     const response = await apiClient.get<Project>(`/api/projects/${id}`)
     return response.data
 }
 
-/**
- * Envía los datos de un nuevo proyecto al servidor para su creación.
- */
+// Crea un nuevo proyecto en la base de datos; retorna el proyecto creado
 export const createProject = async (data: Omit<Project, 'id'>): Promise<Project> => {
     const response = await apiClient.post<Project>('/api/projects', data)
     return response.data
 }
 
-/**
- * Actualiza parcialmente los datos de un proyecto existente.
- * Se usa PATCH para permitir el envío de solo los campos que cambiaron.
- */
+// Actualiza parcialmente un proyecto existente; retorna el proyecto actualizado
 export const updateProject = async (
     id: string,
     data: Partial<Project>
@@ -69,16 +54,12 @@ export const updateProject = async (
     return response.data
 }
 
-/**
- * Elimina un proyecto de forma permanente.
- */
+// Elimina permanentemente un proyecto por ID
 export const deleteProject = async (id: string): Promise<void> => {
     await apiClient.delete(`/api/projects/${id}`)
 }
 
-/**
- * Descarga el reporte PDF de los proyectos de un usuario.
- */
+// Descarga reporte PDF de proyectos de un usuario; retorna Blob del archivo
 export const downloadUserProjectsReport = async (uid: string): Promise<Blob> => {
     const response = await apiClient.get<Blob>(`/api/reports/projects/${uid}/pdf`, {
         responseType: 'blob'

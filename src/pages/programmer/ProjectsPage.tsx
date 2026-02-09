@@ -1,7 +1,5 @@
-/**
- * Página de gestión de proyectos del programador.
- * Heurísticas aplicadas: #5 Prevención de errores, #9 Mensajes claros
- */
+// Gestión de proyectos personales del programador con soporte para subida de imágenes
+
 import { useEffect, useState, useCallback, ChangeEvent, FormEvent } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -57,6 +55,7 @@ const ProjectsPage = () => {
     demoUrl: [(val: string) => val && FormUtils.url(val)],
   }
 
+  // Carga los proyectos pertenecientes al programador actual
   const loadProjects = useCallback(async () => {
     if (!user?.id) return
     try {
@@ -102,6 +101,7 @@ const ProjectsPage = () => {
     }
   }
 
+  // Gestiona la selección y previsualización de la imagen del proyecto
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -114,6 +114,7 @@ const ProjectsPage = () => {
     }
   }
 
+  // Procesa el guardado del proyecto: valida campos, sube imagen y actualiza o crea el registro
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)

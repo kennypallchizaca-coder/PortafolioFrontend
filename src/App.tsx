@@ -1,4 +1,4 @@
-//este es un comentario ejemplo
+// Configuración central de rutas y carga diferida (lazy loading) de componentes
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -40,7 +40,7 @@ function App() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        {/* este es un comentario ejemplo */}
+        // Definición de rutas públicas accessibles sin necesidad de autenticación
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/proyectos" element={<Projects />} />
@@ -51,7 +51,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
         </Route>
 
-        {/* este es un comentario ejemplo */}
+        // Rutas protegidas exclusivamente para usuarios con privilegios de administrador
         <Route
           path="/admin"
           element={
@@ -84,7 +84,7 @@ function App() {
           <Route path="asesorias" element={<AdvisoryInbox />} />
         </Route>
 
-        {/* este es un comentario ejemplo */}
+        // Captura cualquier ruta no definida y redirige al usuario a la página de inicio
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

@@ -1,6 +1,5 @@
-/**
- * Vista pública del portafolio de un programador
- */
+// Página que muestra el portafolio consolidado de un programador específico
+
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getProgrammer, getPortfolio, type ProgrammerProfile, type Portfolio } from '../../services/programmers'
@@ -14,6 +13,7 @@ const PortfolioPublic = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Obtiene perfil, portafolio y proyectos del programador en paralelo
   useEffect(() => {
     const loadData = async () => {
       if (!id) {
