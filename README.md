@@ -137,7 +137,7 @@ La aplicación se configura mediante variables de entorno. Es obligatorio defini
 
 | Variable | Descripción | Valor Ejemplo | Requerido |
 | :--- | :--- | :--- | :---: |
-| `VITE_API_BASE_URL` | Endpoint raíz del servidor Backend. | `https://spring-proyecto.onrender.com` | Sí |
+| `VITE_API_BASE_URL` | Endpoint raíz del servidor Backend. | `https://portafoliobackend-6abu.onrender.com` | Sí |
 | `VITE_API_TIMEOUT` | Tiempo máximo de espera para peticiones (ms). | `120000` | No |
 
 **Nota:** Utilice `.env.local` para sus configuraciones locales para evitar subirlas al repositorio.
@@ -149,7 +149,7 @@ La aplicación se configura mediante variables de entorno. Es obligatorio defini
 El proyecto cuenta con documentación interactiva de sus endpoints utilizando **Swagger UI (OpenAPI 3)**. Esto facilita enormemente las pruebas de integración sin necesidad de herramientas externas como Postman.
 
 *   **URL Local:** `http://localhost:8080/swagger-ui.html`
-*   **URL Producción:** `https://spring-proyecto.onrender.com/swagger-ui.html`
+*   **URL Producción:** `https://portafoliobackend-6abu.onrender.com/swagger-ui.html`
 
 > [!TIP]
 > Para probar los endpoints protegidos, primero debe realizar un login exitoso, copiar el token JWT y pegarlo en el botón **"Authorize"** de Swagger con el prefijo `Bearer <token>`.
