@@ -3,7 +3,7 @@
  * Seguridad: Solo muestra solicitudes del usuario autenticado.
  */
 import { useEffect, useState } from 'react'
-import { getAdvisoriesByRequester, type Advisory } from '../../services/advisories'
+import { getAdvisoriesByRequester, clearAdvisoryHistory, clearRequesterHistory, type Advisory } from '../../services/advisories'
 import { useAuth } from '../../context/AuthContext'
 import { motion } from 'framer-motion'
 import {
@@ -14,7 +14,8 @@ import {
   FiUser,
   FiMessageSquare,
   FiRefreshCw,
-  FiInbox
+  FiInbox,
+  FiTrash2
 } from 'react-icons/fi'
 
 const MyAdvisoryRequests = () => {
@@ -56,6 +57,22 @@ const MyAdvisoryRequests = () => {
   const handleRefresh = () => {
     setRefreshing(true)
     fetchRequests()
+  }
+
+  const handleClearHistory = async () => {
+    if (!user?.email) return
+    if (!confirm('¿Estás seguro de que deseas borrar el historial? Esto eliminará las asesorías aprobadas y rechazadas.')) return
+
+    try {
+      setLoading(true)
+      await clearRequesterHistory(user.email)
+      await fetchRequests()
+    } catch (err) {
+      console.error('Error clearing history:', err)
+      alert('No se pudo borrar el historial')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -101,13 +118,23 @@ const MyAdvisoryRequests = () => {
             Historial de tus asesorías solicitadas
           </p>
         </div>
-        <button
-          onClick={handleRefresh}
-          className="btn btn-ghost btn-circle"
-          disabled={refreshing}
-        >
-          <FiRefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleClearHistory}
+            className="btn btn-ghost btn-circle text-error"
+            title="Borrar historial"
+            disabled={loading}
+          >
+            <FiTrash2 className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleRefresh}
+            className="btn btn-ghost btn-circle"
+            disabled={refreshing}
+          >
+            <FiRefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">

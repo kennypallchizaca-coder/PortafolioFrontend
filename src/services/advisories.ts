@@ -84,3 +84,10 @@ export const updateAdvisoryStatus = async (
 export const clearAdvisoryHistory = async (): Promise<void> => {
     await apiClient.delete('/api/advisories/history')
 }
+
+/**
+ * Limpiar historial de asesorías de un solicitante específico
+ */
+export const clearRequesterHistory = async (email: string): Promise<void> => {
+    await apiClient.delete(`/api/advisories/requester/${email}`)
+}
