@@ -139,13 +139,13 @@ const ProgrammerDirectory = () => {
                   )}
                 </div>
 
-                {/* Nombre */}
-                <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                {/* Nombre - Se añade break-words para evitar desbordamiento con nombres largos */}
+                <h2 className="text-2xl font-bold text-center bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent break-words overflow-hidden">
                   {dev.displayName}
                 </h2>
 
-                {/* Bio */}
-                <p className="text-sm text-base-content/70 leading-relaxed text-center min-h-[4.5rem]">
+                {/* Bio - Se limita a 3 líneas para mantener la consistencia vertical de las tarjetas */}
+                <p className="text-sm text-base-content/70 leading-relaxed text-center min-h-[4.5rem] line-clamp-3 overflow-hidden">
                   {dev.bio}
                 </p>
 

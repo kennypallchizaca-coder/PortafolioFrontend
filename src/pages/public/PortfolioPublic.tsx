@@ -101,7 +101,7 @@ const PortfolioPublic = () => {
                   <h3 className="card-title text-lg">{project.title}</h3>
                   <div className="badge badge-outline capitalize">{project.category}</div>
                 </div>
-                <p className="text-sm text-base-content/70 mt-2">
+                <p className="text-sm text-base-content/70 mt-2 line-clamp-3 overflow-hidden">
                   {project.description}
                 </p>
                 <div className="flex flex-wrap gap-2 mt-4">

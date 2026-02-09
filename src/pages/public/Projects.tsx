@@ -80,7 +80,7 @@ const Projects = () => {
               )}
               <div className="card-body">
                 <h2 className="card-title">{project.title}</h2>
-                <p className="text-sm text-base-content/70">{project.description}</p>
+                <p className="text-sm text-base-content/70 line-clamp-3 overflow-hidden">{project.description}</p>
 
                 {project.techStack && project.techStack.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2">
