@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext'
 import { getProgrammer, updateProgrammer, type ProgrammerProfile } from '../../services/programmers'
 import { uploadAvatar } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
+import { validationMessages, crudMessages, getErrorMessage } from '../../utils/errorMessages'
 import FormInput from '../../components/FormInput'
 import FormTextarea from '../../components/FormTextarea'
 import { FiCamera, FiSave, FiPlus, FiTrash2 } from 'react-icons/fi'
@@ -153,7 +154,7 @@ const ProfileEditor = () => {
     }
 
     if (FormUtils.hasErrors(errors)) {
-      setError('Por favor corrige los errores en el formulario.')
+      setError(validationMessages.formHasErrors)
       return
     }
 
@@ -162,43 +163,42 @@ const ProfileEditor = () => {
     setError('')
 
     try {
-      let photoURL = user.photoURL ?? undefined
-
-      if (photoFile) {
-        try {
-          const uploadResult = await uploadAvatar(photoFile, user.id)
-          photoURL = uploadResult.url
-        } catch (uploadError) {
-          console.error('Error subiendo foto:', uploadError)
-          // continuar sin actualizar photoURL permite que las actualizaciones de texto funcionen
-          // opcional: agregar un mensaje de advertencia al usuario
-          setError('Error al subir la imagen. Se guardarán los otros cambios.')
-          // error no bloqueante para el resto del formulario
-        }
-      }
-
+      // Construir payload base (siempre se envían estos campos)
       const socials: Record<string, string> = {}
       if (form.github) socials.github = form.github
       if (form.instagram) socials.instagram = form.instagram
       if (form.whatsapp) socials.whatsapp = form.whatsapp
 
-      await updateProgrammer(user.id, {
+      const payload: any = {
         displayName: form.displayName,
-        email: form.email, // Incluir email para el backend
+        email: form.email,
         specialty: form.specialty,
         bio: form.bio,
         skills: skills,
-        schedule: schedule, // incluir horario
+        schedule: schedule,
         socials,
         available: form.available,
-        photoURL,
-      })
+      }
 
-      setMessage('✓ Perfil actualizado correctamente.')
+      // Solo incluir photoURL si se subió una NUEVA foto
+      if (photoFile) {
+        try {
+          const uploadResult = await uploadAvatar(photoFile, user.id)
+          payload.photoURL = uploadResult.url
+        } catch (uploadError) {
+          console.error('Error subiendo foto:', uploadError)
+          setError(crudMessages.imageUploadError)
+          // No bloquear el guardado del resto del formulario
+        }
+      }
+
+      await updateProgrammer(user.id, payload)
+
+      setMessage(crudMessages.profileUpdated)
       setPhotoFile(null)
     } catch (err: any) {
       console.error('❌ Error completo:', err)
-      setError(`Error: ${err.message || 'No se pudo actualizar'}`)
+      setError(getErrorMessage(err, 'profile'))
     } finally {
       setLoading(false)
     }

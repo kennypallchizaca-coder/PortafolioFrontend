@@ -134,11 +134,12 @@ export const deleteProgrammer = async (id: string): Promise<void> => {
 export interface Portfolio {
     id?: string
     userId?: string
-    headline: string
-    about?: string
+    title: string
+    description?: string
     skills?: string[]
-    tags?: string[]
     theme?: string
+    headline?: string // for mapping
+    about?: string   // for mapping
 }
 
 export const getPortfolio = async (ownerId: string): Promise<Portfolio | null> => {

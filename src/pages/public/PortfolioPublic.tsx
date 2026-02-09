@@ -61,12 +61,12 @@ const PortfolioPublic = () => {
 
   // Ensure we have displayable data even if explicit portfolio is missing
   // asegurar que tenemos datos para mostrar incluso si falta el portafolio explícito
-  const displayPortfolio: Portfolio = portfolio || {
-    headline: programmer.displayName,
-    about: programmer.bio || 'Sin biografía',
-    skills: programmer.skills || [],
+  const displayPortfolio = {
+    headline: portfolio?.title || programmer.displayName,
+    about: portfolio?.description || programmer.bio || 'Sin biografía',
+    skills: (portfolio?.skills && portfolio.skills.length > 0) ? portfolio.skills : (programmer.skills || []),
     tags: programmer.specialty ? [programmer.specialty] : [],
-    theme: 'light'
+    theme: portfolio?.theme || 'light'
   }
 
   return (

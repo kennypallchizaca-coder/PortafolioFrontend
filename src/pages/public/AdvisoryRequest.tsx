@@ -7,6 +7,7 @@ import { createAdvisoryRequest } from '../../services/advisories'
 import { getProgrammers, type ProgrammerProfile } from '../../services/programmers'
 import { FormUtils } from '../../utils/FormUtils'
 import { useAuth } from '../../context/AuthContext'
+import { validationMessages, crudMessages, getErrorMessage } from '../../utils/errorMessages'
 import FormInput from '../../components/FormInput'
 import FormTextarea from '../../components/FormTextarea'
 import FormSelect from '../../components/FormSelect'
@@ -160,7 +161,7 @@ const AdvisoryRequest = () => {
     setFormErrors(errors)
 
     if (FormUtils.hasErrors(errors)) {
-      setError('Por favor corrige los errores en el formulario.')
+      setError(validationMessages.formHasErrors)
       return
     }
     setLoading(true)
@@ -195,8 +196,7 @@ const AdvisoryRequest = () => {
       // scheduleMap se resetea por el useEffect de selectedProgrammer null
     } catch (err) {
       console.error('Error al enviar solicitud:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
-      setError(`No se pudo enviar la solicitud: ${errorMessage}`)
+      setError(getErrorMessage(err, 'advisory'))
     } finally {
       setLoading(false)
     }

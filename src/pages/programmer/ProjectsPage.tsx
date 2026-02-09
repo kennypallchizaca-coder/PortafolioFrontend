@@ -12,6 +12,7 @@ import {
 } from '../../services/projects'
 import { uploadProjectImage } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
+import { validationMessages, crudMessages, getErrorMessage } from '../../utils/errorMessages'
 import FormInput from '../../components/FormInput'
 import FormTextarea from '../../components/FormTextarea'
 import { FiImage } from 'react-icons/fi'
@@ -63,7 +64,7 @@ const ProjectsPage = () => {
       setProjects(data)
     } catch (error) {
       console.error('Error al cargar proyectos:', error)
-      setError('No se pudieron cargar los proyectos.')
+      setError(crudMessages.projectLoadError)
       setProjects([])
     }
   }, [user?.id])
@@ -132,7 +133,7 @@ const ProjectsPage = () => {
     setFormErrors(errors)
 
     if (FormUtils.hasErrors(errors)) {
-      setError('Por favor corrige los errores en el formulario.')
+      setError(validationMessages.formHasErrors)
       setLoading(false)
       return
     }
@@ -169,11 +170,11 @@ const ProjectsPage = () => {
       if (editingId) {
         // Actualizar proyecto existente
         await updateProject(editingId, payload)
-        setMessage('Proyecto actualizado.')
+        setMessage(crudMessages.projectUpdated)
       } else {
         // Crear nuevo proyecto
         await createProject(payload)
-        setMessage('Proyecto creado.')
+        setMessage(crudMessages.projectCreated)
       }
 
       setForm(emptyProject)
@@ -185,7 +186,7 @@ const ProjectsPage = () => {
       await loadProjects()
     } catch (err) {
       console.error('Error al guardar proyecto:', err)
-      setError('No se pudo guardar el proyecto.')
+      setError(crudMessages.projectSaveError)
     } finally {
       setLoading(false)
     }

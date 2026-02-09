@@ -1,17 +1,38 @@
 /**
- * Dashboard del Administrador (Estilo Analítica de Datos Premium).
- * Diseño inspirado en tableros de control financiero/corporativo.
+ * Dashboard del Administrador - Estilo Alienware Command Center
+ * Diseño con hexágonos, líneas angulares y efectos neón adaptativos
  */
 import { useEffect, useState, useRef } from 'react'
 import { getProgrammers } from '../../services/programmers'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, AreaChart, Area } from 'recharts'
 import api from '../../services/api'
 import { FaCalendarAlt } from 'react-icons/fa'
-import { FiUsers, FiActivity, FiLayers, FiDownload, FiTrendingUp } from 'react-icons/fi'
-import { BiNetworkChart, BiStats } from 'react-icons/bi'
+import { FiUsers, FiActivity, FiLayers, FiDownload, FiTrendingUp, FiCpu, FiDatabase, FiZap } from 'react-icons/fi'
+import { BiNetworkChart } from 'react-icons/bi'
 import { motion, animate } from 'framer-motion'
+import { useTheme } from '../../context/ThemeContext'
 
-// --- Componentes Auxiliares para Animaciones ---
+// Mapeo de colores por tema
+const THEME_COLORS = {
+  forest: {
+    primary: '#10b981',     // green-500
+    secondary: '#059669',   // green-600
+    accent: '#34d399',      // green-400
+    glow: 'rgba(16, 185, 129, 0.3)'
+  },
+  synthwave: {
+    primary: '#06b6d4',     // cyan-500
+    secondary: '#a855f7',    // purple-500
+    accent: '#f472b6',       // pink-400
+    glow: 'rgba(6, 182, 212, 0.3)'
+  },
+  dracula: {
+    primary: '#a855f7',     // purple-500
+    secondary: '#ec4899',    // pink-500
+    accent: '#f97316',       // orange-500
+    glow: 'rgba(168, 85, 247, 0.3)'
+  }
+}
 
 // Contador animado
 const AnimatedCounter = ({ value, duration = 1.5 }: { value: number, duration?: number }) => {
@@ -41,7 +62,6 @@ const getMonthName = (month: number) => {
   return date.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
 }
 
-// Generar últimos 6 meses vacíos para rellenar gráfica
 const getLast6Months = () => {
   const months = [];
   const today = new Date();
@@ -57,51 +77,25 @@ const getLast6Months = () => {
   return months;
 }
 
-const COLORS = ['#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
-
-// Variantes de Framer Motion
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: { type: "spring" as const, stiffness: 100 }
-  }
-};
-
-const cardHoverVariants = {
-  hover: {
-    scale: 1.02,
-    boxShadow: "0px 10px 30px rgba(6, 182, 212, 0.2)",
-    borderColor: "rgba(6, 182, 212, 0.5)",
-    transition: { duration: 0.3 }
-  }
-};
-
 const AdminDashboard = () => {
+  const { theme } = useTheme()
+  const colors = THEME_COLORS[theme]
+
   const [programmersCount, setProgrammersCount] = useState<number>(0)
   const [pendingAdvisories, setPendingAdvisories] = useState<number>(0)
   const [loading, setLoading] = useState(true)
-
   const [chartData, setChartData] = useState<any[]>([])
   const [pieData, setPieData] = useState<any[]>([])
   const [projectData, setProjectData] = useState<any[]>([])
   const [activeProjectsCount, setActiveProjectsCount] = useState<number>(0)
   const [advisoryStats, setAdvisoryStats] = useState({ approved: 0, rejected: 0, pending: 0 });
+  const [currentTime, setCurrentTime] = useState(new Date())
 
-
-  // Fecha actual formateada
-  const todayDate = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  // Actualizar reloj cada segundo
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     const loadStats = async () => {
@@ -119,7 +113,6 @@ const AdminDashboard = () => {
             pending: stats.data.advisoriesPending
           });
 
-          // Gráfico de pastel (Donut Chart)
           setPieData([
             { name: 'Pendientes', value: stats.data.advisoriesPending },
             { name: 'Aprobadas', value: stats.data.advisoriesApproved },
@@ -129,7 +122,6 @@ const AdminDashboard = () => {
           console.error("Error stats", e);
         }
 
-        // Crecimiento de usuarios 
         try {
           const growthResponse = await api.get('/api/dashboard/user-growth');
           let template = getLast6Months();
@@ -145,7 +137,6 @@ const AdminDashboard = () => {
           setChartData(getLast6Months());
         }
 
-        // Proyectos
         try {
           const projectsResponse = await api.get('/api/dashboard/projects-by-user');
           const projectsFormatted = projectsResponse.data.map((item: any) => ({
@@ -183,264 +174,431 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="bg-[#0f1014] min-h-screen text-gray-100 p-4 font-sans selection:bg-cyan-500 selection:text-white overflow-hidden">
+    <div
+      className="min-h-screen p-4 relative overflow-hidden transition-colors duration-500"
+      style={{
+        background: theme === 'dracula' ? '#1a1a2e' : theme === 'synthwave' ? '#0f0f1e' : '#0a1f0d'
+      }}
+    >
+      {/* Efectos de fondo tipo Alienware */}
+      <div className="fixed inset-0 pointer-events-none opacity-20">
+        {/* Grid hexagonal */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle at 50% 50%, ${colors.primary}22 1px, transparent 1px)`,
+            backgroundSize: '30px 30px'
+          }}
+        />
 
-      {/* Background Ambience */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-900/10 rounded-full blur-[100px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+        {/* Líneas diagonales */}
+        <svg className="absolute inset-0 w-full h-full">
+          <defs>
+            <pattern id="diagonalLines" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+              <line x1="0" y1="0" x2="20" y2="20" stroke={colors.primary} strokeWidth="0.5" opacity="0.1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#diagonalLines)" />
+        </svg>
       </div>
 
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="relative z-10 max-w-[1600px] mx-auto"
-      >
+      <div className="relative z-10 max-w-[1800px] mx-auto">
 
-        {/* Top Bar - Header Style "Analítica" */}
-        <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-center mb-6 bg-[#18181b]/80 backdrop-blur-md border-b border-cyan-500/30 p-4 rounded-xl shadow-2xl">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
-              <BiNetworkChart className="text-4xl text-cyan-400 animate-pulse" />
+        {/* Header Alienware Style */}
+        <div
+          className="mb-6 p-6 relative overflow-hidden rounded-none"
+          style={{
+            background: `linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%)`,
+            clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)',
+            boxShadow: `0 0 30px ${colors.glow}, inset 0 0 20px rgba(0,0,0,0.5)`
+          }}
+        >
+          {/* Borde neón superior */}
+          <div
+            className="absolute top-0 left-0 right-0 h-1"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${colors.primary}, ${colors.secondary}, ${colors.primary}, transparent)`,
+              boxShadow: `0 0 10px ${colors.primary}`
+            }}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Logo y Sistema */}
+            <div className="flex items-center gap-4">
+              <div
+                className="relative w-16 h-16 flex items-center justify-center"
+                style={{
+                  clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                  background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                  boxShadow: `0 0 20px ${colors.glow}`
+                }}
+              >
+                <BiNetworkChart className="text-3xl text-white" />
+              </div>
+              <div>
+                <h1
+                  className="text-3xl font-black uppercase tracking-wider"
+                  style={{
+                    color: colors.primary,
+                    textShadow: `0 0 20px ${colors.glow}`
+                  }}
+                >
+                  LEXISWARE
+                </h1>
+                <p className="text-xs text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <div
+                    className="w-2 h-2 rounded-full animate-pulse"
+                    style={{ backgroundColor: colors.accent, boxShadow: `0 0 10px ${colors.accent}` }}
+                  />
+                  COMMAND CENTER
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-widest text-cyan-400 uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
-                Analítica de Datos
-              </h1>
-              <p className="text-xs text-cyan-400/60 uppercase tracking-wider">Centro de Comando</p>
+
+            {/* Reloj Central */}
+            <div className="flex flex-col items-center justify-center">
+              <div
+                className="text-4xl font-mono font-bold tabular-nums"
+                style={{
+                  color: colors.primary,
+                  textShadow: `0 0 10px ${colors.glow}`
+                }}
+              >
+                {currentTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </div>
+              <div className="text-xs text-gray-500 uppercase tracking-wider mt-1">
+                {currentTime.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </div>
+            </div>
+
+            {/* Status System */}
+            <div className="flex flex-col gap-2">
+              <div
+                className="flex items-center justify-between px-4 py-2 bg-black/40 border-l-2"
+                style={{ borderColor: colors.accent }}
+              >
+                <span className="text-xs text-gray-400 flex items-center gap-2">
+                  <FiCpu style={{ color: colors.accent }} />
+                  SYSTEM STATUS
+                </span>
+                <span
+                  className="text-xs font-bold"
+                  style={{ color: colors.accent }}
+                >
+                  ONLINE
+                </span>
+              </div>
+              <div
+                className="flex items-center justify-between px-4 py-2 bg-black/40 border-l-2"
+                style={{ borderColor: colors.primary }}
+              >
+                <span className="text-xs text-gray-400 flex items-center gap-2">
+                  <FiZap style={{ color: colors.primary }} />
+                  PERFORMANCE
+                </span>
+                <span
+                  className="text-xs font-bold"
+                  style={{ color: colors.primary }}
+                >
+                  96%
+                </span>
+              </div>
             </div>
           </div>
+        </div>
 
-        </motion.div>
+        {/* Grid Principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Columna Izquierda - Gráficos */}
+          <div className="lg:col-span-8 space-y-6">
 
-          {/* COLUMNA IZQUIERDA (8) */}
-          <div className="md:col-span-8 flex flex-col gap-6">
-
-            {/* Gráfico 1: Usuarios x Mes (Líneas) */}
-            <motion.div
-              variants={itemVariants}
-              whileHover="hover"
-              className="bg-[#18181b] border border-gray-800 p-5 rounded-xl shadow-xl relative overflow-hidden group"
+            {/* Gráfico de Usuarios */}
+            <div
+              className="p-6 bg-black/60 backdrop-blur-sm border"
+              style={{
+                borderColor: colors.primary + '40',
+                clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))',
+                boxShadow: `inset 0 0 20px ${colors.glow}`
+              }}
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-cyan-500/10"></div>
-
-              <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
-                <h3 className="text-cyan-400 font-bold uppercase tracking-wide flex items-center gap-2">
-                  <FiActivity className="text-xl" /> Crecimiento de Usuarios
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-800">
+                <FiActivity style={{ color: colors.primary, fontSize: '1.5rem' }} />
+                <h3
+                  className="text-lg font-bold uppercase tracking-wide"
+                  style={{ color: colors.primary }}
+                >
+                  CRECIMIENTO DE USUARIOS
                 </h3>
-                <span className="text-xs px-2 py-1 bg-cyan-900/20 text-cyan-300 rounded border border-cyan-900/30">Último Semestre</span>
               </div>
-              <div className="h-80 w-full p-2 relative">
-                {/* Grid decorativo de fondo */}
-                <div className="absolute inset-0 z-0 opacity-5 pointer-events-none"
-                  style={{ backgroundImage: 'linear-gradient(#4b5563 1px, transparent 1px), linear-gradient(90deg, #4b5563 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
+              <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                  <AreaChart data={chartData}>
                     <defs>
-                      <linearGradient id="colorUsuarios" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                      <linearGradient id={`colorUsuarios-${theme}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={colors.primary} stopOpacity={0.8} />
+                        <stop offset="95%" stopColor={colors.primary} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#27272a" />
-                    <XAxis dataKey="name" stroke="#52525b" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} dy={10} />
-                    <YAxis stroke="#52525b" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                    <XAxis dataKey="name" stroke="#666" tick={{ fill: '#999', fontSize: 11 }} />
+                    <YAxis stroke="#666" tick={{ fill: '#999', fontSize: 11 }} />
                     <Tooltip
-                      cursor={{ stroke: '#06b6d4', strokeWidth: 1, strokeDasharray: '3 3' }}
-                      itemStyle={{ color: '#06b6d4' }}
-                      contentStyle={{ backgroundColor: 'rgba(24, 24, 27, 0.95)', border: '1px solid #06b6d4', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                      contentStyle={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                        border: `1px solid ${colors.primary}`,
+                        borderRadius: '0px',
+                        color: '#fff'
+                      }}
                     />
-                    <Line
+                    <Area
                       type="monotone"
                       dataKey="usuarios"
-                      stroke="#06b6d4"
+                      stroke={colors.primary}
                       strokeWidth={3}
-                      dot={{ r: 4, fill: '#18181b', stroke: '#06b6d4', strokeWidth: 2 }}
-                      activeDot={{ r: 8, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }}
-                      fill="url(#colorUsuarios)"
+                      fill={`url(#colorUsuarios-${theme})`}
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
-            </motion.div>
-
-            {/* Fila Inferior: Pastel y Barras Horizontales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-              {/* Gráfico 2: Asesorías (Pie Chart) */}
-              <motion.div
-                variants={itemVariants}
-                whileHover="hover"
-                className="bg-[#18181b] border border-gray-800 p-5 rounded-xl shadow-xl flex flex-col"
-              >
-                <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                  <h3 className="text-green-400 font-bold uppercase tracking-wide flex items-center gap-2">
-                    <FiLayers /> Estado de Asesorías
-                  </h3>
-                  <span className="text-xs text-gray-500 font-mono">
-                    Total: <strong className="text-white"><AnimatedCounter value={pieData.reduce((a, b) => a + (b.value || 0), 0)} /></strong>
-                  </span>
-                </div>
-                <div className="flex-1 min-h-[250px] relative flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                          const RADIAN = Math.PI / 180;
-                          const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                          return percent > 0.05 ? (
-                            <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12} fontWeight="bold">
-                              {`${(percent * 100).toFixed(0)}%`}
-                            </text>
-                          ) : null;
-                        }}
-                        outerRadius={90}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={['#fbbf24', '#10b981', '#ef4444'][index % 3]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', borderRadius: '8px', border: '1px solid #374151', color: '#fff' }} itemStyle={{ color: '#fff' }} />
-                      <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </motion.div>
-
-              {/* Gráfico 3: Proyectos (Horizontal) */}
-              <motion.div
-                variants={itemVariants}
-                whileHover="hover"
-                className="bg-[#18181b] border border-gray-800 p-5 rounded-xl shadow-xl flex flex-col"
-              >
-                <div className="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
-                  <h3 className="text-orange-400 font-bold uppercase tracking-wide flex items-center gap-2">
-                    <BiNetworkChart /> Top Proyectos
-                  </h3>
-                </div>
-                <div className="flex-1 min-h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={projectData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#27272a" />
-                      <XAxis type="number" hide />
-                      <YAxis dataKey="name" type="category" width={80} tick={{ fill: '#9ca3af', fontSize: 11, fontWeight: 500 }} axisLine={false} tickLine={false} />
-                      <Tooltip cursor={{ fill: 'rgba(249, 115, 22, 0.1)' }} contentStyle={{ backgroundColor: '#18181b', border: '1px solid #f97316', color: '#fff', borderRadius: '8px' }} />
-                      <Bar dataKey="proyectos" fill="#f97316" radius={[0, 4, 4, 0]} barSize={25} animationDuration={1500}>
-                        {projectData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={'#f97316'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </motion.div>
-
             </div>
 
+            {/* Gráficos inferior */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Radar Chart */}
+              <div
+                className="p-5 bg-black/60 backdrop-blur-sm border"
+                style={{
+                  borderColor: colors.secondary + '40',
+                  clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)',
+                  boxShadow: `inset 0 0 20px ${colors.glow}`
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800">
+                  <FiLayers style={{ color: colors.secondary }} />
+                  <h3
+                    className="text-sm font-bold uppercase tracking-wide"
+                    style={{ color: colors.secondary }}
+                  >
+                    DISTRIBUCIÓN
+                  </h3>
+                </div>
+
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={[
+                      { subject: 'Programadores', value: programmersCount, fullMark: 20 },
+                      { subject: 'Proyectos', value: activeProjectsCount, fullMark: 20 },
+                      { subject: 'Aprobadas', value: advisoryStats.approved, fullMark: 20 },
+                      { subject: 'Pendientes', value: pendingAdvisories, fullMark: 20 },
+                      { subject: 'Rechazadas', value: advisoryStats.rejected, fullMark: 20 }
+                    ]}>
+                      <PolarGrid stroke="#333" />
+                      <PolarAngleAxis dataKey="subject" stroke="#666" tick={{ fill: '#999', fontSize: 10 }} />
+                      <PolarRadiusAxis stroke="#666" />
+                      <Radar
+                        name="Métricas"
+                        dataKey="value"
+                        stroke={colors.primary}
+                        fill={colors.primary}
+                        fillOpacity={0.6}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Proyectos Bar */}
+              <div
+                className="p-5 bg-black/60 backdrop-blur-sm border"
+                style={{
+                  borderColor: colors.accent + '40',
+                  clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)',
+                  boxShadow: `inset 0 0 20px ${colors.glow}`
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b border-gray-800">
+                  <BiNetworkChart style={{ color: colors.accent }} />
+                  <h3
+                    className="text-sm font-bold uppercase tracking-wide"
+                    style={{ color: colors.accent }}
+                  >
+                    PROYECTOS
+                  </h3>
+                </div>
+
+                <div className="space-y-3">
+                  {projectData.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3">
+                      <div className="text-xs text-gray-500 w-24 truncate">{item.name}</div>
+                      <div className="flex-1 h-6 bg-gray-900 relative overflow-hidden">
+                        <div
+                          className="h-full transition-all duration-1000"
+                          style={{
+                            width: `${(item.proyectos / Math.max(...projectData.map(p => p.proyectos))) * 100}%`,
+                            background: `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,
+                            boxShadow: `0 0 10px ${colors.glow}`
+                          }}
+                        />
+                      </div>
+                      <div
+                        className="text-sm font-bold w-8 text-right"
+                        style={{ color: colors.primary }}
+                      >
+                        {item.proyectos}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* COLUMNA DERECHA (4) - KPIs y Botones */}
-          <div className="md:col-span-4 flex flex-col gap-6">
+          {/* Columna Derecha - KPIs */}
+          <div className="lg:col-span-4 space-y-6">
 
-            {/* KPI Principal Circle */}
-            <motion.div
-              variants={itemVariants}
-              className="bg-[#18181b] border border-gray-800 p-6 rounded-xl shadow-xl relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 p-2 opacity-5">
-                <BiNetworkChart className="text-9xl text-white" />
-              </div>
-
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-purple-500/10 rounded-lg">
-                  <BiStats className="text-xl text-purple-400" />
+            {/* KPI Cards Hexagonales */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { icon: FiUsers, label: 'DEVS', value: programmersCount, color: colors.primary },
+                { icon: FiDatabase, label: 'PROYECTOS', value: activeProjectsCount, color: colors.secondary },
+                { icon: FaCalendarAlt, label: 'APROBADAS', value: advisoryStats.approved, color: colors.accent },
+                { icon: FiActivity, label: 'PENDIENTES', value: pendingAdvisories, color: colors.primary }
+              ].map((kpi, idx) => (
+                <div
+                  key={idx}
+                  className="relative p-4 bg-black/70 backdrop-blur-sm border group hover:scale-105 transition-transform cursor-pointer"
+                  style={{
+                    borderColor: kpi.color + '60',
+                    clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                    boxShadow: `inset 0 0 15px ${kpi.color}40`
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <kpi.icon className="text-3xl mb-2" style={{ color: kpi.color }} />
+                    <div
+                      className="text-4xl font-black mb-1"
+                      style={{
+                        color: kpi.color,
+                        textShadow: `0 0 10px ${kpi.color}`
+                      }}
+                    >
+                      <AnimatedCounter value={kpi.value} />
+                    </div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">
+                      {kpi.label}
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-purple-400 font-bold uppercase tracking-wide">Métricas Clave</h3>
-              </div>
+              ))}
+            </div>
 
-              <div className="flex justify-center items-center py-6 relative">
-                {/* Círculo animado de fondo */}
-                <div className="absolute w-48 h-48 border-2 border-dashed border-gray-700 rounded-full animate-[spin_10s_linear_infinite] opacity-30"></div>
-
-                <div className="relative w-44 h-44 rounded-full border-[6px] border-[#18181b] flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.2)] bg-[#121215] z-10 before:absolute before:inset-0 before:rounded-full before:border-[6px] before:border-purple-500 before:border-l-transparent before:border-r-transparent before:rotate-45">
+            {/* Indicador de Eficiencia */}
+            <div
+              className="p-6 bg-black/70 backdrop-blur-sm border"
+              style={{
+                borderColor: colors.primary + '40',
+                clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)',
+                boxShadow: `inset 0 0 20px ${colors.glow}`
+              }}
+            >
+              <div className="text-center">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-4">SYSTEM EFFICIENCY</div>
+                <div className="relative inline-block">
+                  <svg className="w-40 h-40 rotate-[-90deg]">
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      fill="none"
+                      stroke="#222"
+                      strokeWidth="8"
+                    />
+                    <circle
+                      cx="80"
+                      cy="80"
+                      r="70"
+                      fill="none"
+                      stroke={colors.primary}
+                      strokeWidth="8"
+                      strokeDasharray="439.6"
+                      strokeDashoffset="43.96"
+                      strokeLinecap="round"
+                      style={{
+                        filter: `drop-shadow(0 0 10px ${colors.primary})`
+                      }}
+                    />
+                  </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-400">
-                      <AnimatedCounter value={96} />%
+                    <span
+                      className="text-5xl font-black"
+                      style={{
+                        color: colors.primary,
+                        textShadow: `0 0 20px ${colors.glow}`
+                      }}
+                    >
+                      96%
                     </span>
-                    <span className="text-xs text-green-400 font-bold flex items-center gap-1 mt-1">
-                      <FiTrendingUp /> Eficiencia
-                    </span>
+                    <span className="text-xs text-gray-500 uppercase">OPTIMAL</span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4 mt-8">
-                <motion.div whileHover={{ y: -5 }} className="text-center p-4 bg-[#121215] rounded-xl border border-gray-800 hover:border-cyan-500/50 transition-colors group">
-                  <span className="block text-3xl font-bold text-white group-hover:text-cyan-400 transition-colors">
-                    <AnimatedCounter value={programmersCount} />
-                  </span>
-                  <span className="text-[10px] text-gray-500 uppercase flex justify-center items-center gap-1 font-bold tracking-wider mt-1">
-                    <FiUsers className="inline" /> Devs
-                  </span>
-                </motion.div>
-                <motion.div whileHover={{ y: -5 }} className="text-center p-4 bg-[#121215] rounded-xl border border-gray-800 hover:border-orange-500/50 transition-colors group">
-                  <span className="block text-3xl font-bold text-white group-hover:text-orange-400 transition-colors">
-                    <AnimatedCounter value={activeProjectsCount} />
-                  </span>
-                  <span className="text-[10px] text-gray-500 uppercase flex justify-center items-center gap-1 font-bold tracking-wider mt-1">
-                    <FiActivity className="inline" /> Proyectos
-                  </span>
-                </motion.div>
-              </div>
-            </motion.div>
-
-            {/* Botones de Acción */}
-            <motion.div
-              variants={itemVariants}
-              className="bg-[#18181b] border border-gray-800 p-5 rounded-xl shadow-xl"
+            {/* Botones de Descarga */}
+            <div
+              className="p-5 bg-black/70 backdrop-blur-sm border"
+              style={{
+                borderColor: colors.secondary + '40',
+                clipPath: 'polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px)',
+                boxShadow: `inset 0 0 20px ${colors.glow}`
+              }}
             >
-              <h3 className="text-white font-bold uppercase tracking-wide mb-4 border-b border-gray-800 pb-2 text-sm text-gray-400">
-                Zona de Descargas
-              </h3>
-              <div className="flex flex-col gap-3">
-                <div onClick={() => downloadPdf('programmers')} className="relative overflow-hidden flex justify-between items-center bg-[#121215] p-4 rounded-lg border-l-[3px] border-red-500 hover:bg-gray-800 transition-all cursor-pointer group shadow-lg hover:shadow-red-900/10">
-                  <div className="relative z-10">
-                    <span className="block text-white font-bold group-hover:text-red-400 transition-colors text-sm">Reporte Programadores</span>
-                    <span className="text-[10px] text-gray-500">Formato PDF • Completo</span>
-                  </div>
-                  <FiDownload className="text-gray-600 group-hover:text-red-500 text-xl transition-colors transform group-hover:scale-110 relative z-10" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 to-red-500/5 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"></div>
-                </div>
-
-                <div onClick={() => downloadPdf('advisories')} className="relative overflow-hidden flex justify-between items-center bg-[#121215] p-4 rounded-lg border-l-[3px] border-green-500 hover:bg-gray-800 transition-all cursor-pointer group shadow-lg hover:shadow-green-900/10">
-                  <div className="relative z-10">
-                    <span className="block text-white font-bold group-hover:text-green-400 transition-colors text-sm">Reporte Asesorías</span>
-                    <span className="text-[10px] text-gray-500">Formato PDF • Estados</span>
-                  </div>
-                  <FiDownload className="text-gray-600 group-hover:text-green-500 text-xl transition-colors transform group-hover:scale-110 relative z-10" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500/0 to-green-500/5 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500"></div>
-                </div>
-
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-800">
+                <FiDownload style={{ color: colors.secondary }} />
+                <h3
+                  className="text-sm font-bold uppercase tracking-wide"
+                  style={{ color: colors.secondary }}
+                >
+                  REPORTES PDF
+                </h3>
               </div>
-            </motion.div>
 
+              <div className="space-y-3">
+                {[
+                  { type: 'programmers', label: 'PROGRAMADORES', icon: FiUsers },
+                  { type: 'advisories', label: 'ASESORÍAS', icon: FaCalendarAlt }
+                ].map((report, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => downloadPdf(report.type as any)}
+                    className="w-full flex items-center justify-between p-3 bg-black/50 border group hover:bg-black/70 transition-all"
+                    style={{
+                      borderColor: colors.primary + '40',
+                      clipPath: 'polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px)'
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <report.icon style={{ color: colors.primary }} />
+                      <span
+                        className="text-xs font-bold uppercase"
+                        style={{ color: colors.primary }}
+                      >
+                        {report.label}
+                      </span>
+                    </div>
+                    <FiDownload
+                      className="group-hover:translate-y-1 transition-transform"
+                      style={{ color: colors.accent }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

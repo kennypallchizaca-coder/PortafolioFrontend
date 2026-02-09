@@ -1,15 +1,11 @@
-//este es un comentario ejemplo
 import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
 import { getProgrammers, upsertProgrammer, deleteProgrammer, type ProgrammerProfile } from '../../services/programmers'
 import { uploadAvatar } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
-import { FiPlus, FiTrash2, FiEdit2, FiGithub, FiInstagram } from 'react-icons/fi'
-import { FaWhatsapp } from 'react-icons/fa'
-
-
+import { FiPlus, FiTrash2 } from 'react-icons/fi'
 import { DAYS, TIME_SLOTS } from '../../utils/schedule'
+import { ProgrammerList } from '../../components/admin/ProgrammerList'
 
-//este es un comentario ejemplo
 const initialForm = {
   displayName: '',
   email: '',
@@ -35,13 +31,12 @@ const ProgrammersPage = () => {
 
   const [skills, setSkills] = useState<string[]>(['JavaScript', 'React'])
   const [newSkill, setNewSkill] = useState('')
-  //este es un comentario ejemplo
+
   const [times, setTimes] = useState<string[]>([])
   const [selectedDay, setSelectedDay] = useState('Lunes')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
 
-  //este es un comentario ejemplo
   const validationRules = {
     displayName: [
       (val: string) => FormUtils.required(val),
@@ -69,7 +64,6 @@ const ProgrammersPage = () => {
     ],
   }
 
-  //este es un comentario ejemplo
   const loadProgrammers = async () => {
     try {
       const data = await getProgrammers()
@@ -158,30 +152,35 @@ const ProgrammersPage = () => {
 
     try {
       const uid = editingId || `prog_${Date.now()}`
-      let photoURL = ''
-
-      if (photoFile) {
-        const uploadResult = await uploadAvatar(photoFile, uid)
-        photoURL = uploadResult.url
-      }
-
       const socials: Record<string, string> = {}
       if (form.github) socials.github = form.github
       if (form.instagram) socials.instagram = form.instagram
       if (form.whatsapp) socials.whatsapp = form.whatsapp
 
-      await upsertProgrammer(uid, {
+      const payload: any = {
         displayName: form.displayName,
         email: form.email,
         specialty: form.specialty,
         bio: form.bio,
         role: 'PROGRAMMER',
-        photoURL,
         skills: skills,
         socials,
         available: form.available,
         schedule: times,
-      })
+      }
+
+      // Solo enviar foto si hay nueva
+      if (photoFile) {
+        try {
+          const uploadResult = await uploadAvatar(photoFile, uid)
+          payload.photoURL = uploadResult.url
+        } catch (err) {
+          console.error('Error subiendo foto:', err)
+          setError('Error al subir la imagen. Se guardarán los otros cambios.')
+        }
+      }
+
+      await upsertProgrammer(uid, payload)
 
       setMessage(editingId ? '✓ Programador actualizado correctamente.' : '✓ Programador guardado correctamente.')
       setForm(initialForm)
@@ -260,6 +259,7 @@ const ProgrammersPage = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Formulario */}
         <form onSubmit={handleSubmit} className="card bg-base-100 shadow-md">
           <div className="card-body space-y-3">
             <h2 className="card-title">{editingId ? 'Editar programador' : 'Nuevo programador'}</h2>
@@ -566,98 +566,11 @@ const ProgrammersPage = () => {
           </div>
         </form>
 
-        <div className="card bg-base-100 shadow-md">
-          <div className="card-body space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="card-title">Listado</h2>
-              <span className="badge badge-secondary">{programmers.length}</span>
-            </div>
-            <div className="space-y-2">
-              {programmers.map((dev) => (
-                <div key={dev.id} className="flex flex-col rounded-lg border border-base-200 p-3">
-                  <div className="flex items-start gap-3">
-                    <div className="avatar">
-                      <div className="w-12 rounded-full">
-                        {dev.photoURL ? (
-                          <img src={dev.photoURL} alt={dev.displayName} />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center bg-base-300">
-                            <span className="text-lg">👤</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold">{dev.displayName}</p>
-                        <span className="badge badge-outline capitalize">
-                          {dev.specialty || 'Especialidad'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-base-content/60">{dev.email}</p>
-                      <p className="text-sm text-base-content/70">{dev.bio}</p>
-
-                      {/* este es un comentario ejemplo */}
-                      {dev.socials && (
-                        <div className="flex gap-2 mt-2">
-                          {dev.socials.github && (
-                            <a href={dev.socials.github} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-focus">
-                              <FiGithub />
-                            </a>
-                          )}
-                          {dev.socials.instagram && (
-                            <a href={dev.socials.instagram} target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-secondary-focus">
-                              <FiInstagram />
-                            </a>
-                          )}
-                          {dev.socials.whatsapp && (
-                            <a href={dev.socials.whatsapp} target="_blank" rel="noopener noreferrer" className="text-success hover:text-success-focus">
-                              <FaWhatsapp />
-                            </a>
-                          )}
-                        </div>
-                      )}
-
-                      {dev.skills && dev.skills.length > 0 && (
-                        <div className="mt-2">
-                          <div className="flex flex-wrap gap-1">
-                            {dev.skills.map((skill, idx) => (
-                              <span key={idx} className="badge badge-primary badge-sm">
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-3 flex gap-2">
-                        <button
-                          onClick={() => handleEdit(dev)}
-                          className="btn btn-sm btn-primary gap-2"
-                        >
-                          <FiEdit2 className="h-4 w-4" />
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(dev.id!, dev.displayName)}
-                          className="btn btn-sm btn-error gap-2"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                          Eliminar
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!programmers.length && (
-                <div className="alert alert-info text-sm">
-                  Aún no hay programadores. Crea uno con el formulario.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ProgrammerList
+          programmers={programmers}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       </div>
     </div>
   )

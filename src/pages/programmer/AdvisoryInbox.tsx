@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { getAdvisoriesByProgrammer, updateAdvisoryStatus, type Advisory } from '../../services/advisories'
+import { getAdvisoriesByProgrammer, updateAdvisoryStatus, clearAdvisoryHistory, type Advisory } from '../../services/advisories'
 
 
 const AdvisoryInbox = () => {
@@ -14,8 +14,18 @@ const AdvisoryInbox = () => {
   const [error, setError] = useState('')
   const [filter, setFilter] = useState<'todas' | 'pending' | 'approved' | 'rejected'>('pending')
 
-  const clearHistory = () => {
-    setItems([])
+  const clearHistory = async () => {
+    if (!confirm('¿Estás seguro de que deseas borrar el historial? Esto eliminará las asesorías aprobadas y rechazadas.')) return
+
+    setLoading(true)
+    try {
+      await clearAdvisoryHistory()
+      await load() // Recargar lista
+    } catch (err) {
+      setError('No se pudo limpiar el historial.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const load = async () => {

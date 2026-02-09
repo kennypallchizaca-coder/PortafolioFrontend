@@ -11,6 +11,7 @@ export interface Portfolio {
     description: string
     theme: string
     isPublic: boolean
+    skills?: string[]
 }
 
 /**
@@ -33,6 +34,22 @@ export const getPortfolio = async (userId: string): Promise<Portfolio | null> =>
  * El backend maneja la lógica de upsert
  */
 export const upsertPortfolio = async (userId: string, data: Partial<Portfolio>): Promise<Portfolio> => {
+    try {
+        // Intentar obtener el portafolio existente
+        const existing = await getPortfolio(userId)
+
+        if (existing && existing.id) {
+            // Si existe, actualizar con PATCH
+            const payload = { ...data, userId }
+            const response = await apiClient.patch<Portfolio>(`/api/portfolios/${existing.id}`, payload)
+            return response.data
+        }
+    } catch (error) {
+        // Si no existe (404) o error, continuar al POST
+        // (getPortfolio maneja el 404 retornando null, pero por si acaso)
+    }
+
+    // Si no existe, crear con POST
     const payload = { ...data, userId }
     const response = await apiClient.post<Portfolio>('/api/portfolios', payload)
     return response.data

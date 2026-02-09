@@ -16,6 +16,8 @@ const initial = {
 const PortfolioEditor = () => {
   const { user } = useAuth()
   const [form, setForm] = useState(initial)
+  const [skills, setSkills] = useState<string[]>([])
+  const [newSkill, setNewSkill] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -31,6 +33,7 @@ const PortfolioEditor = () => {
           theme: data.theme || 'light',
           isPublic: data.isPublic ?? true,
         })
+        setSkills(data.skills || [])
       }
     }
     load()
@@ -57,6 +60,7 @@ const PortfolioEditor = () => {
         description: form.description,
         theme: form.theme,
         isPublic: form.isPublic,
+        skills: skills,
       })
       setMessage('✓ Portafolio guardado correctamente.')
     } catch (err: any) {
@@ -101,6 +105,56 @@ const PortfolioEditor = () => {
               rows={5}
               placeholder="Cuéntanos sobre tus proyectos, experiencia y habilidades..."
             />
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Habilidades del Portafolio</span>
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {skills.map((skill, idx) => (
+                <div key={idx} className="badge badge-primary gap-2">
+                  {skill}
+                  <button
+                    type="button"
+                    onClick={() => setSkills(skills.filter((_, i) => i !== idx))}
+                    className="btn btn-ghost btn-xs"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newSkill}
+                onChange={(e) => setNewSkill(e.target.value)}
+                className="input input-bordered flex-1"
+                placeholder="Ej: React Native"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
+                      setSkills([...skills, newSkill.trim()])
+                      setNewSkill('')
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (newSkill.trim() && !skills.includes(newSkill.trim())) {
+                    setSkills([...skills, newSkill.trim()])
+                    setNewSkill('')
+                  }
+                }}
+                className="btn btn-secondary"
+              >
+                Agregar
+              </button>
+            </div>
           </div>
 
           <div className="form-control">

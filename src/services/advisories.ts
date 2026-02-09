@@ -78,3 +78,9 @@ export const updateAdvisoryStatus = async (
     })
     return response.data
 }
+/**
+ * Limpiar historial de asesorías (aprobadas y rechazadas)
+ */
+export const clearAdvisoryHistory = async (): Promise<void> => {
+    await apiClient.delete('/api/advisories/history')
+}

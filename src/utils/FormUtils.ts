@@ -28,7 +28,7 @@ export class FormUtils {
    */
   static required(value: any): string | null {
     if (!value || (typeof value === 'string' && value.trim().length === 0)) {
-      return 'Este campo es requerido';
+      return 'Este campo es obligatorio';
     }
     return null;
   }
@@ -39,7 +39,7 @@ export class FormUtils {
   static minLength(value: string, min: number): string | null {
     if (!value) return null;
     if (value.length < min) {
-      return `Mínimo ${min} caracteres`;
+      return `Debe tener al menos ${min} caracteres`;
     }
     return null;
   }
@@ -50,7 +50,7 @@ export class FormUtils {
   static maxLength(value: string, max: number): string | null {
     if (!value) return null;
     if (value.length > max) {
-      return `Máximo ${max} caracteres`;
+      return `Debe tener máximo ${max} caracteres`;
     }
     return null;
   }
@@ -61,7 +61,7 @@ export class FormUtils {
   static min(value: number, min: number): string | null {
     if (value === null || value === undefined) return null;
     if (value < min) {
-      return `Valor mínimo: ${min}`;
+      return `El valor debe ser al menos ${min}`;
     }
     return null;
   }
@@ -72,7 +72,7 @@ export class FormUtils {
   static max(value: number, max: number): string | null {
     if (value === null || value === undefined) return null;
     if (value > max) {
-      return `Valor máximo: ${max}`;
+      return `El valor debe ser máximo ${max}`;
     }
     return null;
   }
@@ -84,7 +84,7 @@ export class FormUtils {
     if (!value) return null;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(value)) {
-      return 'Email no válido';
+      return 'Por favor, ingresa un correo electrónico válido';
     }
     return null;
   }
@@ -98,7 +98,7 @@ export class FormUtils {
       new URL(value);
       return null;
     } catch {
-      return 'URL no válida';
+      return 'Por favor, ingresa una URL válida';
     }
   }
 
@@ -122,7 +122,7 @@ export class FormUtils {
     // Formato internacional E.164: +[código país][número]
     const phoneRegex = /^\+?[1-9]\d{1,14}$/;
     if (!phoneRegex.test(value.replace(/[\s\-()]/g, ''))) {
-      return 'Número de teléfono no válido (ej: +593999999999)';
+      return 'Por favor, ingresa un número de teléfono válido (ej: +593999999999)';
     }
     return null;
   }
@@ -137,7 +137,7 @@ export class FormUtils {
     today.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
 
     if (selectedDate <= today) {
-      return 'La fecha debe ser futura';
+      return 'Por favor, selecciona una fecha posterior a hoy';
     }
     return null;
   }
@@ -149,7 +149,7 @@ export class FormUtils {
     if (!value) return null;
     const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
     if (!timeRegex.test(value)) {
-      return 'Hora no válida (formato: HH:MM, ej: 14:30)';
+      return 'Por favor, ingresa una hora válida (formato 24h, ej: 14:30)';
     }
     return null;
   }
@@ -160,7 +160,7 @@ export class FormUtils {
   static matchField(value: string, matchValue: string, fieldName: string = 'el campo anterior'): string | null {
     if (!value) return null;
     if (value !== matchValue) {
-      return `Debe coincidir con ${fieldName}`;
+      return `Este campo debe coincidir con ${fieldName}`;
     }
     return null;
   }
@@ -186,7 +186,7 @@ export class FormUtils {
   static exactLength(value: string, length: number): string | null {
     if (!value) return null;
     if (value.length !== length) {
-      return `Debe tener exactamente ${length} caracteres`;
+      return `Este campo debe tener exactamente ${length} caracteres`;
     }
     return null;
   }
@@ -198,7 +198,7 @@ export class FormUtils {
     if (value === null || value === undefined || value === '') return null;
     const num = Number(value);
     if (!Number.isInteger(num) || num <= 0) {
-      return 'Debe ser un número entero positivo';
+      return 'Por favor, ingresa un número entero positivo';
     }
     return null;
   }

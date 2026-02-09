@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { register, type RegisterInput } from '../../services/auth'
+import { getErrorMessage, authMessages, validationMessages } from '../../utils/errorMessages'
 import { motion } from 'framer-motion'
 import {
   FiLock,
@@ -67,11 +68,7 @@ const LoginPage = () => {
       await login(email, password)
     } catch (err: any) {
       console.error('Error en login:', err)
-      if (err.response?.status === 401) {
-        setError('¡Advertencia! Credenciales incorrectas o cuenta inexistente')
-      } else {
-        setError(err.response?.data?.message || err.message || 'Error al intentar iniciar sesión. Intenta de nuevo.')
-      }
+      setError(getErrorMessage(err, 'login'))
     } finally {
       setLoading(false)
     }
@@ -84,7 +81,7 @@ const LoginPage = () => {
     setRegisterSuccess(false)
 
     if (registerPassword.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+      setError(validationMessages.minLength(6))
       setLoading(false)
       return
     }
@@ -109,7 +106,7 @@ const LoginPage = () => {
       }, 1500)
     } catch (err: any) {
       console.error('Register error:', err)
-      setError(err.response?.data?.message || err.message || 'Error al registrar. El email puede estar en uso.')
+      setError(getErrorMessage(err, 'register'))
     } finally {
       setLoading(false)
     }
