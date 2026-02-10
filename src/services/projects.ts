@@ -27,7 +27,10 @@ export const getProjectsByOwner = async (ownerId: string): Promise<Project[]> =>
 
 // Obtiene todos los proyectos registrados en la plataforma; retorna lista
 export const getAllProjects = async (): Promise<Project[]> => {
-    const response = await apiClient.get<any>('/api/projects')
+    // Request a larger page size to fetch all projects (temporary fix until pagination is implemented in UI)
+    const response = await apiClient.get<any>('/api/projects', {
+        params: { size: 100 }
+    })
     // Manejo de respuesta paginada de Spring Data
     return response.data.content || response.data
 }

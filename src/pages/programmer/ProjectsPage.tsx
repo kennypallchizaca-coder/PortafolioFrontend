@@ -8,6 +8,7 @@ import {
   updateProject,
   type Project,
 } from '../../services/projects'
+import { getPortfolio } from '../../services/programmers'
 import { uploadProjectImage } from '../../services/upload'
 import { FormUtils } from '../../utils/FormUtils'
 import { validationMessages, crudMessages, getErrorMessage } from '../../utils/errorMessages'
@@ -37,7 +38,9 @@ const ProjectsPage = () => {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState('')
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
+
   const [touched, setTouched] = useState<{ [key: string]: boolean }>({})
+  const [portfolioIsPrivate, setPortfolioIsPrivate] = useState(false)
 
   // Reglas de validación
   const validationRules = {
@@ -60,7 +63,14 @@ const ProjectsPage = () => {
     if (!user?.id) return
     try {
       const data = await getProjectsByOwner(user.id)
+
       setProjects(data)
+
+      // Verificar visibilidad del portafolio
+      const portfolio = await getPortfolio(user.id)
+      if (portfolio) {
+        setPortfolioIsPrivate(portfolio.isPublic === false)
+      }
     } catch (error) {
       console.error('Error al cargar proyectos:', error)
       setError(crudMessages.projectLoadError)
@@ -211,6 +221,20 @@ const ProjectsPage = () => {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Proyectos</h1>
+
+
+      {portfolioIsPrivate && (
+        <div className="alert alert-warning shadow-lg">
+          <div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <span>Tu portafolio está configurado como <strong>Privado</strong>. Tus proyectos no serán visibles para el público hasta que lo cambies a Público en "Mi Portafolio".</span>
+          </div>
+          <div className="flex-none">
+            <a href="/programmer/portfolio" className="btn btn-sm btn-ghost">Ir a configurar</a>
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-4 lg:grid-cols-2">
         <form onSubmit={handleSubmit} className="card bg-base-100 shadow-md">
           <div className="card-body space-y-3">

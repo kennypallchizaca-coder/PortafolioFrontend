@@ -126,6 +126,7 @@ export interface Portfolio {
     theme?: string
     headline?: string // for mapping
     about?: string   // for mapping
+    isPublic?: boolean
 }
 
 // Busca el portafolio asociado a un programador; retorna portafolio o null
